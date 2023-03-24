@@ -51,10 +51,7 @@ class Wav2LipPredictor:
 
     def get_smoothened_boxes(self, boxes, T):
         for i in range(len(boxes)):
-            if i + T > len(boxes):
-                window = boxes[len(boxes) - T:]
-            else:
-                window = boxes[i:i + T]
+            window = boxes[len(boxes) - T:] if i + T > len(boxes) else boxes[i:i + T]
             boxes[i] = np.mean(window, axis=0)
         return boxes
 
@@ -74,7 +71,7 @@ class Wav2LipPredictor:
                     raise RuntimeError(
                         'Image too big to run face detection on GPU. Please use the --resize_factor argument')
                 batch_size //= 2
-                print('Recovering from OOM error; New batch size: {}'.format(batch_size))
+                print(f'Recovering from OOM error; New batch size: {batch_size}')
                 continue
             break
 
@@ -103,10 +100,11 @@ class Wav2LipPredictor:
         img_batch, mel_batch, frame_batch, coords_batch = [], [], [], []
 
         if self.box[0] == -1:
-            if not self.static:
-                face_det_results = self.face_detect(frames)  # BGR2RGB for CNN face detection
-            else:
-                face_det_results = self.face_detect([frames[0]])
+            face_det_results = (
+                self.face_detect([frames[0]])
+                if self.static
+                else self.face_detect(frames)
+            )
         else:
             print('Using the specified bounding box instead of face detection...')
             y1, y2, x1, x2 = self.box
@@ -185,11 +183,11 @@ class Wav2LipPredictor:
 
                 full_frames.append(frame)
 
-        print("Number of frames available for inference: " + str(len(full_frames)))
+        print(f"Number of frames available for inference: {len(full_frames)}")
 
         if not audio_seq.endswith('.wav'):
             print('Extracting raw audio...')
-            command = 'ffmpeg -y -i {} -strict -2 {}'.format(audio_seq, 'temp/temp.wav')
+            command = f'ffmpeg -y -i {audio_seq} -strict -2 temp/temp.wav'
 
             subprocess.call(command, shell=True)
             audio_seq = 'temp/temp.wav'
@@ -211,7 +209,7 @@ class Wav2LipPredictor:
             mel_chunks.append(mel[:, start_idx:start_idx + mel_step_size])
             i += 1
 
-        print("Length of mel chunks: {}".format(len(mel_chunks)))
+        print(f"Length of mel chunks: {len(mel_chunks)}")
 
         full_frames = full_frames[:len(mel_chunks)]
 
@@ -254,6 +252,5 @@ class Wav2LipPredictor:
         out.release()
         os.makedirs(output_dir, exist_ok=True)
         if visualization:
-            command = 'ffmpeg -y -i {} -i {} -strict -2 -q:v 1 {}'.format(audio_seq, 'temp/result.avi',
-                                                                          os.path.join(output_dir, 'result.avi'))
+            command = f"ffmpeg -y -i {audio_seq} -i temp/result.avi -strict -2 -q:v 1 {os.path.join(output_dir, 'result.avi')}"
             subprocess.call(command, shell=platform.system() != 'Windows')

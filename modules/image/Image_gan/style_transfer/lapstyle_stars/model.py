@@ -78,7 +78,7 @@ def make_laplace_pyramid(x, levels):
     """
     pyramid = []
     current = x
-    for i in range(levels):
+    for _ in range(levels):
         pyramid.append(laplacian(current))
         current = tensor_resample(current, (max(current.shape[2] // 2, 1), max(current.shape[3] // 2, 1)))
     pyramid.append(current)
@@ -135,6 +135,4 @@ class LapStylePredictor:
         stylized_rev_second = fold_laplace_pyramid([stylized_rev_lap_second, stylized_rev_lap, stylized_small])
 
         stylized = stylized_rev_second
-        stylized_visual = tensor2img(stylized, min_max=(0., 1.))
-
-        return stylized_visual
+        return tensor2img(stylized, min_max=(0., 1.))

@@ -42,7 +42,7 @@ model_cfgs = {
 def get_mean_style(generator):
     mean_style = None
 
-    for i in range(10):
+    for _ in range(10):
         style = generator.mean_latent(1024)
 
         if mean_style is None:
@@ -57,13 +57,11 @@ def get_mean_style(generator):
 
 @paddle.no_grad()
 def sample(generator, mean_style, n_sample):
-    image = generator(
+    return generator(
         [paddle.randn([n_sample, generator.style_dim])],
         truncation=0.7,
         truncation_latent=mean_style,
     )[0]
-
-    return image
 
 
 @paddle.no_grad()
@@ -107,18 +105,14 @@ class StyleGANv2Predictor:
         self.output_path = output_path
 
         if weight_path is None:
-            if model_type in model_cfgs.keys():
-                weight_path = get_path_from_url(model_cfgs[model_type]['model_urls'])
-                size = model_cfgs[model_type].get('size', size)
-                style_dim = model_cfgs[model_type].get('style_dim', style_dim)
-                n_mlp = model_cfgs[model_type].get('n_mlp', n_mlp)
-                channel_multiplier = model_cfgs[model_type].get('channel_multiplier', channel_multiplier)
-                checkpoint = paddle.load(weight_path)
-            else:
+            if model_type not in model_cfgs.keys():
                 raise ValueError('Predictor need a weight path or a pretrained model type')
-        else:
-            checkpoint = paddle.load(weight_path)
-
+            weight_path = get_path_from_url(model_cfgs[model_type]['model_urls'])
+            size = model_cfgs[model_type].get('size', size)
+            style_dim = model_cfgs[model_type].get('style_dim', style_dim)
+            n_mlp = model_cfgs[model_type].get('n_mlp', n_mlp)
+            channel_multiplier = model_cfgs[model_type].get('channel_multiplier', channel_multiplier)
+        checkpoint = paddle.load(weight_path)
         self.generator = StyleGANv2Generator(size, style_dim, n_mlp, channel_multiplier)
         self.generator.set_state_dict(checkpoint)
         self.generator.eval()

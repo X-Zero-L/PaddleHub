@@ -68,8 +68,7 @@ cfgs = {
 
 
 def _vgg(arch, cfg, batch_norm, **kwargs):
-    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
-    return model
+    return VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
 
 
 def vgg16(batch_norm=False, **kwargs):
@@ -92,19 +91,15 @@ class SpinalNet_VGG16(nn.Layer):
     def __init__(self, label_list: list = None, load_checkpoint: str = None):
         super(SpinalNet_VGG16, self).__init__()
 
-        if label_list is not None:
-            self.labels = label_list
-            class_dim = len(self.labels)
-        else:
+        if label_list is None:
             label_list = []
             label_file = os.path.join(self.directory, 'label_list.txt')
             files = open(label_file)
-            for line in files.readlines():
+            for line in files:
                 line = line.strip('\n')
                 label_list.append(line)
-            self.labels = label_list
-            class_dim = len(self.labels)
-
+        self.labels = label_list
+        class_dim = len(self.labels)
         self.backbone = vgg16()
 
         half_in_size = round(512 * 7 * 7 / 2)

@@ -120,7 +120,7 @@ class DecodeImage(object):
         data = np.frombuffer(img, dtype='uint8')
         img = cv2.imdecode(data, 1)
         if self.to_rgb:
-            assert img.shape[2] == 3, 'invalid shape of image[%s]' % (img.shape)
+            assert img.shape[2] == 3, f'invalid shape of image[{img.shape}]'
             img = img[:, :, ::-1]
 
         if self.channel_first:
@@ -163,10 +163,7 @@ class CropImage(object):
     """ crop image """
 
     def __init__(self, size):
-        if type(size) is int:
-            self.size = (size, size)
-        else:
-            self.size = size  # (h, w)
+        self.size = (size, size) if type(size) is int else size
 
     def __call__(self, img):
         w, h = self.size
@@ -183,11 +180,7 @@ class RandCropImage(object):
     """ random crop image """
 
     def __init__(self, size, scale=None, ratio=None, interpolation=None, backend="cv2"):
-        if type(size) is int:
-            self.size = (size, size)  # (h, w)
-        else:
-            self.size = size
-
+        self.size = (size, size) if type(size) is int else size
         self.scale = [0.08, 1.0] if scale is None else scale
         self.ratio = [3. / 4., 4. / 3.] if ratio is None else ratio
 
@@ -234,10 +227,7 @@ class RandFlipImage(object):
         self.flip_code = flip_code
 
     def __call__(self, img):
-        if random.randint(0, 1) == 1:
-            return cv2.flip(img, self.flip_code)
-        else:
-            return img
+        return cv2.flip(img, self.flip_code) if random.randint(0, 1) == 1 else img
 
 
 class NormalizeImage(object):
@@ -348,12 +338,15 @@ class Topk(object):
         assert isinstance(x, paddle.Tensor)
         if file_names is not None:
             assert x.shape[0] == len(file_names)
-        x = F.softmax(x, axis=-1) if not multilabel else F.sigmoid(x)
+        x = F.sigmoid(x) if multilabel else F.softmax(x, axis=-1)
         x = x.numpy()
         y = []
         for idx, probs in enumerate(x):
-            index = probs.argsort(axis=0)[-self.topk:][::-1].astype("int32") if not multilabel else np.where(
-                probs >= 0.5)[0].astype("int32")
+            index = (
+                np.where(probs >= 0.5)[0].astype("int32")
+                if multilabel
+                else probs.argsort(axis=0)[-self.topk :][::-1].astype("int32")
+            )
             clas_id_list = []
             score_list = []
             label_name_list = []

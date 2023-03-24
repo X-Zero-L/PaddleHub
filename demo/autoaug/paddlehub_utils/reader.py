@@ -64,7 +64,7 @@ class PbaAugment(object):
             normalize = {'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}
 
         policy = kwargs["policy"]
-        assert stage in ["search", "train"]
+        assert stage in {"search", "train"}
         train_epochs = kwargs["hp_policy_epochs"]
         self.auto_aug_transform = AutoAugTransform.create(policy, stage=stage, train_epochs=train_epochs)
         #self.auto_aug_transform = PbtAutoAugmentClassiferTransform(conf)
@@ -184,7 +184,7 @@ class PicReader(paddle.io.Dataset):
 
         self._parse_list(**kwargs)
         self.cache_img = cache_img
-        self.cache_img_buff = dict()
+        self.cache_img_buff = {}
         if self.cache_img:
             self._get_all_img(**kwargs)
 
@@ -211,9 +211,7 @@ class PicReader(paddle.io.Dataset):
                 img = cv2.resize(img, (scale_size, scale_size))
                 self.cache_img_buff[image_path] = img
             except BaseException:
-                print("img_path:{} can not by cv2".format(image_path).format(image_path))
-
-                pass
+                print(f"img_path:{image_path} can not by cv2".format(image_path))
 
     def _load_image(self, directory: str) -> np.ndarray:
         """
@@ -225,18 +223,13 @@ class PicReader(paddle.io.Dataset):
 
         """
 
-        if not self.cache_img:
+        if self.cache_img and directory in self.cache_img_buff:
+            img = self.cache_img_buff[directory]
+        else:
             img = cv2.imread(directory, cv2.IMREAD_COLOR).astype('float32')
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            # img = Image.open(directory).convert('RGB')
-        else:
-            if directory in self.cache_img_buff:
-                img = self.cache_img_buff[directory]
-            else:
-                img = cv2.imread(directory, cv2.IMREAD_COLOR).astype('float32')
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-                # img = Image.open(directory).convert('RGB')
+            # img = Image.open(directory).convert('RGB')
         return img
 
     def _parse_list(self, **kwargs) -> None:
@@ -253,7 +246,7 @@ class PicReader(paddle.io.Dataset):
 
         with open(self.list_file) as f:
             lines = f.read().splitlines()
-            print("PicReader:: found {} picture in `{}'".format(len(lines), self.list_file))
+            print(f"PicReader:: found {len(lines)} picture in `{self.list_file}'")
             for i, line in enumerate(lines):
                 record = re.split(delimiter, line)
                 # record = line.split()
@@ -261,7 +254,7 @@ class PicReader(paddle.io.Dataset):
 
                 if not os.path.splitext(record[0])[1]:
                     # 适配线上分类数据转无后缀的情况
-                    record[0] = record[0] + ".jpg"
+                    record[0] = f"{record[0]}.jpg"
 
                 # 线上单标签情况兼容多标签，后续需去除
                 record[1] = re.split(",", record[1])[0]
@@ -387,12 +380,17 @@ def _read_classes(csv_file: str) -> dict:
                 class_name = row.strip()
                 # print(class_id, class_name)
             except ValueError:
-                six.raise_from(ValueError('line {}: format should be \'class_name\''.format(line)), None)
+                six.raise_from(
+                    ValueError(
+                        f"line {line}: format should be \'class_name\'"
+                    ),
+                    None,
+                )
 
             class_id = _parse(line, int, 'line {}: malformed class ID: {{}}'.format(line))
 
             if class_name in result:
-                raise ValueError('line {}: duplicate class name: \'{}\''.format(line, class_name))
+                raise ValueError(f"line {line}: duplicate class name: \'{class_name}\'")
             result[class_name] = class_id
     return result
 

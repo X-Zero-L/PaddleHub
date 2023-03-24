@@ -60,7 +60,7 @@ class pixel2style2pixel:
         paddle.disable_static()
         place = 'gpu:0' if use_gpu else 'cpu'
         place = paddle.set_device(place)
-        if images == None and paths == None:
+        if images is None and paths is None:
             print('No image provided. Please input an image or a image path.')
             return
 
@@ -81,8 +81,8 @@ class pixel2style2pixel:
                 os.makedirs(output_dir, exist_ok=True)
             for i, out in enumerate(results):
                 if out is not None:
-                    cv2.imwrite(os.path.join(output_dir, 'output_{}.png'.format(i)), out[0][:, :, ::-1])
-                    np.save(os.path.join(output_dir, 'output_{}.npy'.format(i)), out[1])
+                    cv2.imwrite(os.path.join(output_dir, f'output_{i}.png'), out[0][:, :, ::-1])
+                    np.save(os.path.join(output_dir, f'output_{i}.npy'), out[1])
 
         return results
 
@@ -92,10 +92,11 @@ class pixel2style2pixel:
         Run as a command.
         """
         self.parser = argparse.ArgumentParser(
-            description="Run the {} module.".format(self.name),
-            prog='hub run {}'.format(self.name),
+            description=f"Run the {self.name} module.",
+            prog=f'hub run {self.name}',
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
 
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_config_group = self.parser.add_argument_group(
@@ -103,12 +104,12 @@ class pixel2style2pixel:
         self.add_module_config_arg()
         self.add_module_input_arg()
         self.args = self.parser.parse_args(argvs)
-        results = self.style_transfer(
+        return self.style_transfer(
             paths=[self.args.input_path],
             output_dir=self.args.output_dir,
             use_gpu=self.args.use_gpu,
-            visualization=self.args.visualization)
-        return results
+            visualization=self.args.visualization,
+        )
 
     @serving
     def serving_method(self, images, **kwargs):
@@ -117,8 +118,7 @@ class pixel2style2pixel:
         """
         images_decode = [base64_to_cv2(image) for image in images]
         results = self.style_transfer(images=images_decode, **kwargs)
-        tolist = [result.tolist() for result in results]
-        return tolist
+        return [result.tolist() for result in results]
 
     def add_module_config_arg(self):
         """

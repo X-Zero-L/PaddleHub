@@ -32,9 +32,10 @@ class StyleGANv2MixingPredictor(StyleGANv2Predictor):
         latent2 = paddle.to_tensor(latent2).unsqueeze(0)
         assert latent1.shape[1] == latent2.shape[1] == len(
             weights), 'latents and their weights should have the same level nums.'
-        mix_latent = []
-        for i, weight in enumerate(weights):
-            mix_latent.append(latent1[:, i:i + 1] * weight + latent2[:, i:i + 1] * (1 - weight))
+        mix_latent = [
+            latent1[:, i : i + 1] * weight + latent2[:, i : i + 1] * (1 - weight)
+            for i, weight in enumerate(weights)
+        ]
         mix_latent = paddle.concat(mix_latent, 1)
         latent_n = paddle.concat([latent1, latent2, mix_latent], 0)
         generator = self.generator

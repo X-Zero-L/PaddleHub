@@ -119,8 +119,8 @@ class CNN14(nn.Layer):
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu(self.fc1(x))
 
-        if self.extract_embedding:
-            output = F.dropout(x, p=0.5, training=self.training)
-        else:
-            output = F.sigmoid(self.fc_audioset(x))
-        return output
+        return (
+            F.dropout(x, p=0.5, training=self.training)
+            if self.extract_embedding
+            else F.sigmoid(self.fc_audioset(x))
+        )

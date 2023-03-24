@@ -120,8 +120,8 @@ def custom_conv_layer(ni: int,
                       **kwargs):
     "Create a sequence of convolutional (`ni` to `nf`), ReLU (if `use_activ`) and batchnorm (if `bn`) layers."
     if padding is None:
-        padding = (ks - 1) // 2 if not transpose else 0
-    bn = norm_type in ('Batch', 'Batchzero') or extra_bn == True
+        padding = 0 if transpose else (ks - 1) // 2
+    bn = norm_type in ('Batch', 'Batchzero') or extra_bn
     if bias is None:
         bias = not bn
     conv_func = nn.Conv2DTranspose if transpose else nn.Conv1d if is_1d else nn.Conv2D
@@ -258,7 +258,8 @@ def conv_layer(ni: int,
                init=None,
                self_attention: bool = False):
     "Create a sequence of convolutional (`ni` to `nf`), ReLU (if `use_activ`) and batchnorm (if `bn`) layers."
-    if padding is None: padding = (ks - 1) // 2 if not transpose else 0
+    if padding is None:
+        padding = 0 if transpose else (ks - 1) // 2
     bn = norm_type in ('Batch', 'BatchZero')
     if bias is None: bias = not bn
     conv_func = nn.Conv2DTranspose if transpose else nn.Conv1d if is_1d else nn.Conv2D
@@ -396,5 +397,12 @@ def build_model():
     cut = -2
     encoder = nn.Sequential(*list(backbone.children())[:cut])
 
-    model = Deoldify(encoder, 3, blur=True, y_range=(-3, 3), norm_type='Spectral', self_attention=True, nf_factor=2)
-    return model
+    return Deoldify(
+        encoder,
+        3,
+        blur=True,
+        y_range=(-3, 3),
+        norm_type='Spectral',
+        self_attention=True,
+        nf_factor=2,
+    )

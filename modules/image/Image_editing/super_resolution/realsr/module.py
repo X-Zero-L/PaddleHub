@@ -108,9 +108,9 @@ class RealSRPredictor(Module):
 
         frame_pattern_combined = os.path.join(pred_frame_path, '%08d.png')
 
-        vid_out_path = os.path.join(output_path, '{}_realsr_out.mp4'.format(base_name))
+        vid_out_path = os.path.join(output_path, f'{base_name}_realsr_out.mp4')
         U.frames2video(frame_pattern_combined, vid_out_path, str(int(fps)))
-        print("save result at {}".format(vid_out_path))
+        print(f"save result at {vid_out_path}")
 
         return frame_pattern_combined, vid_out_path
 
@@ -120,19 +120,18 @@ class RealSRPredictor(Module):
 
         if not U.is_image(input):
             return self.run_video(input)
-        else:
-            pred_img = self.run_image(input)
+        pred_img = self.run_image(input)
 
-            out_path = None
-            if self.output:
-                final = cv2.cvtColor(pred_img, cv2.COLOR_BGR2RGB)
-                final = Image.fromarray(final)
-                base_name = os.path.splitext(os.path.basename(input))[0]
-                out_path = os.path.join(self.output, base_name + '.png')
-                final.save(out_path)
-                print('save result at {}'.format(out_path))
+        out_path = None
+        if self.output:
+            final = cv2.cvtColor(pred_img, cv2.COLOR_BGR2RGB)
+            final = Image.fromarray(final)
+            base_name = os.path.splitext(os.path.basename(input))[0]
+            out_path = os.path.join(self.output, f'{base_name}.png')
+            final.save(out_path)
+            print(f'save result at {out_path}')
 
-            return pred_img, out_path
+        return pred_img, out_path
 
     @serving
     def serving_method(self, images, **kwargs):

@@ -30,9 +30,7 @@ class U2Net_Portrait(nn.Layer):
             d1, d2, d3, d4, d5, d6, d7 = self.model(data)
             outputs.append(d1.numpy())
 
-        outputs = np.concatenate(outputs, 0)
-
-        return outputs
+        return np.concatenate(outputs, 0)
 
     def Portrait_GEN(self,
                      images=None,
@@ -49,7 +47,6 @@ class U2Net_Portrait(nn.Layer):
         # 模型预测
         outputs = self.predict(processor.input_datas)
 
-        # 预测结果后处理
-        results = processor.postprocess(outputs, visualization=visualization, output_dir=output_dir)
-
-        return results
+        return processor.postprocess(
+            outputs, visualization=visualization, output_dir=output_dir
+        )

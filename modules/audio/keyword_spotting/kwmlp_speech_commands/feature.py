@@ -55,5 +55,6 @@ def compute_mfcc(
         center=center)(x)  # waveforms batch ~ (B, T)
     log_fbank = paddleaudio.features.spectrum.power_to_db(fbank, top_db=top_db)
     dct_matrix = create_dct(n_mfcc=n_mels, n_mels=n_mels, norm=norm)
-    mfcc = paddle.matmul(log_fbank.transpose((0, 2, 1)), dct_matrix).transpose((0, 2, 1))  # (B, n_mels, L)
-    return mfcc
+    return paddle.matmul(log_fbank.transpose((0, 2, 1)), dct_matrix).transpose(
+        (0, 2, 1)
+    )

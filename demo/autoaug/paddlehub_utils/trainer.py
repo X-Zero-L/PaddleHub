@@ -69,13 +69,18 @@ class CustomTrainer(Trainer):
                 if self.use_vdl:
                     self.log_writer.add_scalar(tag='TRAIN/loss', step=timer.current_step, value=avg_loss)
 
-                print_msg = 'Epoch={}/{}, Step={}/{}'.format(current_epoch, epochs, batch_idx + 1, steps_per_epoch)
-                print_msg += ' loss={:.4f}'.format(avg_loss)
-
+                print_msg = (
+                    f'Epoch={current_epoch}/{epochs}, Step={batch_idx + 1}/{steps_per_epoch}'
+                    + ' loss={:.4f}'.format(avg_loss)
+                )
                 for metric, value in avg_metrics.items():
                     value /= log_interval
                     if self.use_vdl:
-                        self.log_writer.add_scalar(tag='TRAIN/{}'.format(metric), step=timer.current_step, value=value)
+                        self.log_writer.add_scalar(
+                            tag=f'TRAIN/{metric}',
+                            step=timer.current_step,
+                            value=value,
+                        )
                     print_msg += ' {}={:.4f}'.format(metric, value)
 
                 print_msg += ' lr={:.6f} step/sec={:.2f} | ETA {}'.format(lr, timer.timing, timer.eta)
@@ -111,7 +116,7 @@ class CustomTrainer(Trainer):
         timer = Timer(steps_per_epoch * epochs)
         timer.start()
 
-        for i in range(epochs):
+        for _ in range(epochs):
             loader.dataset.set_epoch(epochs)
             self.current_epoch += 1
             self.train_one_epoch(loader, timer, self.current_epoch, epochs, log_interval, steps_per_epoch)
@@ -128,7 +133,10 @@ class CustomTrainer(Trainer):
 
                         for metric, value in eval_metrics.items():
                             self.log_writer.add_scalar(
-                                tag='EVAL/{}'.format(metric), step=timer.current_step, value=value)
+                                tag=f'EVAL/{metric}',
+                                step=timer.current_step,
+                                value=value,
+                            )
 
                     if not self.best_metrics or self.compare_metrics(self.best_metrics, eval_metrics):
                         self.best_metrics = eval_metrics
@@ -138,7 +146,7 @@ class CustomTrainer(Trainer):
 
                         metric_msg = ['{}={:.4f}'.format(metric, value) for metric, value in self.best_metrics.items()]
                         metric_msg = ' '.join(metric_msg)
-                        logger.eval('Saving best model to {} [best {}]'.format(best_model_path, metric_msg))
+                        logger.eval(f'Saving best model to {best_model_path} [best {metric_msg}]')
 
                 self._save_checkpoint()
 
@@ -150,9 +158,13 @@ class CustomTrainer(Trainer):
         batch_sampler = paddle.io.DistributedBatchSampler(
             eval_dataset, batch_size=batch_size, shuffle=False, drop_last=False)
 
-        loader = paddle.io.DataLoader(
-            eval_dataset, batch_sampler=batch_sampler, places=place, num_workers=num_workers, return_list=True)
-        return loader
+        return paddle.io.DataLoader(
+            eval_dataset,
+            batch_sampler=batch_sampler,
+            places=place,
+            num_workers=num_workers,
+            return_list=True,
+        )
 
     def evaluate_process(self, loader: paddle.io.DataLoader) -> dict:
         self.model.eval()
@@ -200,5 +212,4 @@ class CustomTrainer(Trainer):
         '''
 
         loader = self.init_evaluate(eval_dataset, batch_size, num_workers)
-        res = self.evaluate_process(loader)
-        return res
+        return self.evaluate_process(loader)

@@ -64,7 +64,7 @@ class styleganv2_mixing:
         paddle.disable_static()
         place = 'gpu:0' if use_gpu else 'cpu'
         place = paddle.set_device(place)
-        if images == None and paths == None:
+        if images is None and paths is None:
             print('No image provided. Please input an image or a image path.')
             return
         if images != None:
@@ -90,9 +90,15 @@ class styleganv2_mixing:
                 os.makedirs(output_dir, exist_ok=True)
             for i, out in enumerate(results):
                 if out is not None:
-                    cv2.imwrite(os.path.join(output_dir, 'src_{}_image1.png'.format(i)), out[0][:, :, ::-1])
-                    cv2.imwrite(os.path.join(output_dir, 'src_{}_image2.png'.format(i)), out[1][:, :, ::-1])
-                    cv2.imwrite(os.path.join(output_dir, 'dst_{}.png'.format(i)), out[2][:, :, ::-1])
+                    cv2.imwrite(
+                        os.path.join(output_dir, f'src_{i}_image1.png'),
+                        out[0][:, :, ::-1],
+                    )
+                    cv2.imwrite(
+                        os.path.join(output_dir, f'src_{i}_image2.png'),
+                        out[1][:, :, ::-1],
+                    )
+                    cv2.imwrite(os.path.join(output_dir, f'dst_{i}.png'), out[2][:, :, ::-1])
 
         return results
 
@@ -102,10 +108,11 @@ class styleganv2_mixing:
         Run as a command.
         """
         self.parser = argparse.ArgumentParser(
-            description="Run the {} module.".format(self.name),
-            prog='hub run {}'.format(self.name),
+            description=f"Run the {self.name} module.",
+            prog=f'hub run {self.name}',
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
 
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_config_group = self.parser.add_argument_group(
@@ -113,16 +120,13 @@ class styleganv2_mixing:
         self.add_module_config_arg()
         self.add_module_input_arg()
         self.args = self.parser.parse_args(argvs)
-        results = self.generate(
-            paths=[{
-                'image1': self.args.image1,
-                'image2': self.args.image2
-            }],
+        return self.generate(
+            paths=[{'image1': self.args.image1, 'image2': self.args.image2}],
             weights=self.args.weights,
             output_dir=self.args.output_dir,
             use_gpu=self.args.use_gpu,
-            visualization=self.args.visualization)
-        return results
+            visualization=self.args.visualization,
+        )
 
     @serving
     def serving_method(self, images, **kwargs):
@@ -134,8 +138,7 @@ class styleganv2_mixing:
             image['image1'] = base64_to_cv2(image['image1'])
             image['image2'] = base64_to_cv2(image['image2'])
         results = self.generate(images_decode, **kwargs)
-        tolist = [result.tolist() for result in results]
-        return tolist
+        return [result.tolist() for result in results]
 
     def add_module_config_arg(self):
         """

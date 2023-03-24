@@ -36,7 +36,7 @@ def postprocess(data_out, org_im, org_im_shape, org_im_path, output_dir, visuali
     Returns:
         result (dict): The data of processed image.
     """
-    result = dict()
+    result = {}
     for sr in data_out:
         sr = np.squeeze(sr, 0)
         sr = np.clip(sr * 255, 0, 255)
@@ -49,10 +49,7 @@ def postprocess(data_out, org_im, org_im_shape, org_im_path, output_dir, visuali
             cv2.imwrite(save_im_path, sr)
             print("save image at: ", save_im_path)
             result['save_path'] = save_im_path
-            result['data'] = sr
-        else:
-            result['data'] = sr
-
+        result['data'] = sr
     return result
 
 
@@ -75,6 +72,8 @@ def get_save_image_name(org_im, org_im_path, output_dir):
     # save image path
     save_im_path = os.path.join(output_dir, im_prefix + ext)
     if os.path.exists(save_im_path):
-        save_im_path = os.path.join(output_dir, im_prefix + 'time={}'.format(int(time.time())) + ext)
+        save_im_path = os.path.join(
+            output_dir, f'{im_prefix}time={int(time.time())}{ext}'
+        )
 
     return save_im_path

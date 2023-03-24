@@ -169,13 +169,11 @@ def split_syllable(syllable: str):
         phones.append(syllable[:2])
         tones.append('0')
         phones.append(syllable[2:])
-        tones.append(tone)
     elif syllable[0] in _initials:
         phones.append(syllable[0])
         tones.append('0')
         phones.append(syllable[1:])
-        tones.append(tone)
     else:
         phones.append(syllable)
-        tones.append(tone)
+    tones.append(tone)
     return phones, tones

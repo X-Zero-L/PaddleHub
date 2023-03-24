@@ -33,7 +33,7 @@ class ID_Photo_GEN(nn.Layer):
         # 读取数据列表
         if paths is not None:
             for im_path in paths:
-                assert os.path.isfile(im_path), "The {} isn't a valid file path.".format(im_path)
+                assert os.path.isfile(im_path), f"The {im_path} isn't a valid file path."
                 im = cv2.imread(im_path)
                 datas.append(im)
 
@@ -142,17 +142,14 @@ class ID_Photo_GEN(nn.Layer):
 
             outputs.append(cartoon[0].numpy())
 
-        outputs = np.concatenate(outputs, 0)
-
-        return outputs
+        return np.concatenate(outputs, 0)
 
     # 结果后处理函数
     @staticmethod
     def postprocess(faces, masks, visualization, output_dir):
         # 检查输出目录
-        if visualization:
-            if not os.path.exists(output_dir):
-                os.mkdir(output_dir)
+        if visualization and not os.path.exists(output_dir):
+            os.mkdir(output_dir)
 
         results = []
 
@@ -180,7 +177,4 @@ class ID_Photo_GEN(nn.Layer):
         # 数据预处理
         faces, masks = self.preprocess(images, batch_size, use_gpu)
 
-        # 结果后处理
-        results = self.postprocess(faces, masks, visualization, output_dir)
-
-        return results
+        return self.postprocess(faces, masks, visualization, output_dir)

@@ -43,9 +43,7 @@ class LanguageIdentification(paddle.nn.Layer):
 
         self.label_list = []
         with open(label_path, 'r') as f:
-            for l in f:
-                self.label_list.append(l.strip())
-
+            self.label_list.extend(l.strip() for l in f)
         self.sr = 16000
         model_conf = {
             'input_size': 80,
@@ -64,7 +62,7 @@ class LanguageIdentification(paddle.nn.Layer):
 
     def load_audio(self, wav):
         wav = os.path.abspath(os.path.expanduser(wav))
-        assert os.path.isfile(wav), 'Please check wav file: {}'.format(wav)
+        assert os.path.isfile(wav), f'Please check wav file: {wav}'
         waveform, _ = paddleaudio.load(wav, sr=self.sr, mono=True, normal=False)
         return waveform
 
@@ -80,6 +78,4 @@ class LanguageIdentification(paddle.nn.Layer):
 
         fbank = compute_log_fbank(x)  # x: waveform tensors with (B, T) shape
         norm_fbank = normalize(fbank)
-        logits = self.model(norm_fbank).squeeze(1)
-
-        return logits
+        return self.model(norm_fbank).squeeze(1)

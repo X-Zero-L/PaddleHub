@@ -29,11 +29,11 @@ from paddlehub.module.module import moduleinfo, serving
 from paddlehub.common.dir import THIRD_PARTY_HOME
 from paddlehub.common.downloader import default_downloader
 
-lack_dependency = []
-for dependency in ["ruamel", "parakeet", "scipy", "soundfile", "librosa"]:
-    if not importlib.util.find_spec(dependency):
-        lack_dependency.append(dependency)
-
+lack_dependency = [
+    dependency
+    for dependency in ["ruamel", "parakeet", "scipy", "soundfile", "librosa"]
+    if not importlib.util.find_spec(dependency)
+]
 # Accelerate NLTK package download via paddlehub. 'import parakeet' will use the package.
 _PUNKT_URL = "https://paddlehub.bj.bcebos.com/paddlehub-thirdparty/punkt.tar.gz"
 _CMUDICT_URL = "https://paddlehub.bj.bcebos.com/paddlehub-thirdparty/cmudict.tar.gz"
@@ -49,21 +49,20 @@ if not os.path.exists(cmudict_path):
     default_downloader.download_file_and_uncompress(url=_CMUDICT_URL, save_path=corpora_path, print_progress=True)
 nltk.data.path.append(nltk_path)
 
-if not lack_dependency:
-    import soundfile as sf
-    import librosa
-    from ruamel import yaml
-    from scipy.io.wavfile import write
-    from parakeet.g2p.en import text_to_sequence
-    from parakeet.models.transformer_tts.utils import *
-    from parakeet.models.transformer_tts import TransformerTTS as TransformerTTSModel
-    from parakeet.models.waveflow import WaveFlowModule
-    from parakeet.utils import io
-    from parakeet.modules.weight_norm import WeightNormWrapper
-else:
+if lack_dependency:
     raise ImportError(
-        "The module requires additional dependencies: %s. You can install parakeet via 'git clone https://github.com/PaddlePaddle/Parakeet && cd Parakeet && pip install -e .' and others via pip install"
-        % ", ".join(lack_dependency))
+        f"""The module requires additional dependencies: {", ".join(lack_dependency)}. You can install parakeet via 'git clone https://github.com/PaddlePaddle/Parakeet && cd Parakeet && pip install -e .' and others via pip install"""
+    )
+import soundfile as sf
+import librosa
+from ruamel import yaml
+from scipy.io.wavfile import write
+from parakeet.g2p.en import text_to_sequence
+from parakeet.models.transformer_tts.utils import *
+from parakeet.models.transformer_tts import TransformerTTS as TransformerTTSModel
+from parakeet.models.waveflow import WaveFlowModule
+from parakeet.utils import io
+from parakeet.modules.weight_norm import WeightNormWrapper
 
 
 class AttrDict(dict):
@@ -135,11 +134,7 @@ class TransformerTTS(hub.NLPPredictionModule):
             logger.warning(
                 "use_gpu has been set False as you didn't set the environment variable CUDA_VISIBLE_DEVICES while using use_gpu=True"
             )
-        if use_gpu:
-            place = fluid.CUDAPlace(0)
-        else:
-            place = fluid.CPUPlace()
-
+        place = fluid.CUDAPlace(0) if use_gpu else fluid.CPUPlace()
         if texts and isinstance(texts, list):
             predicted_data = texts
         else:
@@ -151,14 +146,14 @@ class TransformerTTS(hub.NLPPredictionModule):
             self.waveflow.eval()
             for text in predicted_data:
                 # init input
-                logger.info("Processing sentence: %s" % text)
+                logger.info(f"Processing sentence: {text}")
                 text = np.asarray(text_to_sequence(text))
                 text = fluid.layers.unsqueeze(dg.to_variable(text).astype(np.int64), [0])
                 mel_input = dg.to_variable(np.zeros([1, 1, 80])).astype(np.float32)
                 pos_text = np.arange(1, text.shape[1] + 1)
                 pos_text = fluid.layers.unsqueeze(dg.to_variable(pos_text).astype(np.int64), [0])
 
-                for i in range(self.max_len):
+                for _ in range(self.max_len):
                     pos_mel = np.arange(1, mel_input.shape[1] + 1)
                     pos_mel = fluid.layers.unsqueeze(dg.to_variable(pos_mel).astype(np.int64), [0])
                     mel_pred, postnet_pred, attn_probs, stop_preds, attn_enc, attn_dec = self.tts_model(
@@ -174,7 +169,8 @@ class TransformerTTS(hub.NLPPredictionModule):
                     wav = self.synthesis_with_waveflow(postnet_pred, self.waveflow_config.sigma)
                 else:
                     raise ValueError(
-                        'vocoder error, we only support griffinlim and waveflow, but recevied %s.' % vocoder)
+                        f'vocoder error, we only support griffinlim and waveflow, but recevied {vocoder}.'
+                    )
                 wavs.append(wav)
         return wavs, self.tts_config['audio']['sr']
 
@@ -186,9 +182,11 @@ class TransformerTTS(hub.NLPPredictionModule):
         inv_basis = np.linalg.pinv(basis)
         spec = np.maximum(1e-10, np.dot(inv_basis, mel_output))
 
-        wav = librosa.core.griffinlim(spec**cfg['power'], hop_length=cfg['hop_length'], win_length=cfg['win_length'])
-
-        return wav
+        return librosa.core.griffinlim(
+            spec ** cfg['power'],
+            hop_length=cfg['hop_length'],
+            win_length=cfg['win_length'],
+        )
 
     def synthesis_with_waveflow(self, mel_output, sigma):
         mel_spectrogram = fluid.layers.transpose(fluid.layers.squeeze(mel_output, [0]), [1, 0])
@@ -209,8 +207,7 @@ class TransformerTTS(hub.NLPPredictionModule):
         """
         wavs, sample_rate = self.synthesize(texts, use_gpu, vocoder)
         wavs = [wav.tolist() for wav in wavs]
-        result = {"wavs": wavs, "sample_rate": sample_rate}
-        return result
+        return {"wavs": wavs, "sample_rate": sample_rate}
 
     def add_module_config_arg(self):
         """
@@ -238,10 +235,11 @@ class TransformerTTS(hub.NLPPredictionModule):
         Run as a command
         """
         self.parser = argparse.ArgumentParser(
-            description='Run the %s module.' % self.name,
-            prog='hub run %s' % self.name,
+            description=f'Run the {self.name} module.',
+            prog=f'hub run {self.name}',
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
 
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_input_group = self.parser.add_argument_group(
@@ -267,8 +265,7 @@ class TransformerTTS(hub.NLPPredictionModule):
         for index, wav in enumerate(wavs):
             sf.write(os.path.join(args.output_path, f"{index}.wav"), wav, sample_rate)
 
-        ret = f"The synthesized wav files have been saved in {args.output_path}"
-        return ret
+        return f"The synthesized wav files have been saved in {args.output_path}"
 
 
 if __name__ == "__main__":

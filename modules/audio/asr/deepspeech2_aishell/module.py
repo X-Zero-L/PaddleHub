@@ -81,11 +81,13 @@ class DeepSpeech2(paddle.nn.Layer):
     @staticmethod
     def check_audio(audio_file):
         sig, sample_rate = sf.read(audio_file)
-        assert sample_rate == 16000, 'Excepting sample rate of input audio is 16000, but got {}'.format(sample_rate)
+        assert (
+            sample_rate == 16000
+        ), f'Excepting sample rate of input audio is 16000, but got {sample_rate}'
 
     @serving
     def speech_recognize(self, audio_file, device='cpu'):
-        assert os.path.isfile(audio_file), 'File not exists: {}'.format(audio_file)
+        assert os.path.isfile(audio_file), f'File not exists: {audio_file}'
         self.check_audio(audio_file)
 
         paddle.set_device(device)

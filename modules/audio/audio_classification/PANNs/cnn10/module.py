@@ -67,24 +67,22 @@ class PANN(nn.Layer):
         if load_checkpoint is not None and os.path.isfile(load_checkpoint):
             state_dict = paddle.load(load_checkpoint)
             self.set_state_dict(state_dict)
-            logger.info('Loaded parameters from %s' % os.path.abspath(load_checkpoint))
+            logger.info(f'Loaded parameters from {os.path.abspath(load_checkpoint)}')
 
     def forward(self, feats, labels=None):
         # feats: (batch_size, num_frames, num_melbins) -> (batch_size, 1, num_frames, num_melbins)
         feats = feats.unsqueeze(1)
 
-        if self.task == 'sound-cls':
-            embeddings = self.cnn10(feats)
-            embeddings = self.dropout(embeddings)
-            logits = self.fc(embeddings)
-            probs = F.softmax(logits, axis=1)
+        if self.task != 'sound-cls':
+            return self.cnn10(feats)
+        embeddings = self.cnn10(feats)
+        embeddings = self.dropout(embeddings)
+        logits = self.fc(embeddings)
+        probs = F.softmax(logits, axis=1)
 
-            if labels is not None:
-                loss = self.criterion(logits, labels)
-                correct = self.metric.compute(probs, labels)
-                acc = self.metric.update(correct)
-                return probs, loss, {'acc': acc}
-            return probs
-        else:
-            audioset_logits = self.cnn10(feats)
-            return audioset_logits
+        if labels is not None:
+            loss = self.criterion(logits, labels)
+            correct = self.metric.compute(probs, labels)
+            acc = self.metric.update(correct)
+            return probs, loss, {'acc': acc}
+        return probs

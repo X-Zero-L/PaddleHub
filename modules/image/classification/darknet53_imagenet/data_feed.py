@@ -61,13 +61,11 @@ def test_reader(paths=None, images=None):
     img_list = []
     if paths:
         for img_path in paths:
-            assert os.path.isfile(img_path), "The {} isn't a valid file path.".format(img_path)
+            assert os.path.isfile(img_path), f"The {img_path} isn't a valid file path."
             img = Image.open(img_path)
             #img = cv2.imread(img_path)
             img_list.append(img)
     if images is not None:
-        for img in images:
-            img_list.append(Image.fromarray(np.uint8(img)))
+        img_list.extend(Image.fromarray(np.uint8(img)) for img in images)
     for im in img_list:
-        im = process_image(im)
-        yield im
+        yield process_image(im)

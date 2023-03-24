@@ -28,8 +28,7 @@ from paddlehub.module.cv_module import ImageClassifierModule
 def xavier(channels: int, filter_size: int, name: str):
     """Initialize the weights by uniform distribution."""
     stdv = (3.0 / (filter_size**2 * channels))**0.5
-    param_attr = ParamAttr(initializer=Uniform(-stdv, stdv), name=name + "_weights")
-    return param_attr
+    return ParamAttr(initializer=Uniform(-stdv, stdv), name=f"{name}_weights")
 
 
 class ConvLayer(nn.Layer):
@@ -51,12 +50,12 @@ class ConvLayer(nn.Layer):
             stride=stride,
             padding=(filter_size - 1) // 2,
             groups=groups,
-            weight_attr=ParamAttr(name=name + "_weights"),
-            bias_attr=False)
+            weight_attr=ParamAttr(name=f"{name}_weights"),
+            bias_attr=False,
+        )
 
     def forward(self, inputs: paddle.Tensor):
-        y = self._conv(inputs)
-        return y
+        return self._conv(inputs)
 
 
 class Inception(nn.Layer):
@@ -74,14 +73,22 @@ class Inception(nn.Layer):
                  name: str = None):
         super(Inception, self).__init__()
 
-        self._conv1 = ConvLayer(input_channels, filter1, 1, name="inception_" + name + "_1x1")
-        self._conv3r = ConvLayer(input_channels, filter3R, 1, name="inception_" + name + "_3x3_reduce")
-        self._conv3 = ConvLayer(filter3R, filter3, 3, name="inception_" + name + "_3x3")
-        self._conv5r = ConvLayer(input_channels, filter5R, 1, name="inception_" + name + "_5x5_reduce")
-        self._conv5 = ConvLayer(filter5R, filter5, 5, name="inception_" + name + "_5x5")
+        self._conv1 = ConvLayer(
+            input_channels, filter1, 1, name=f"inception_{name}_1x1"
+        )
+        self._conv3r = ConvLayer(
+            input_channels, filter3R, 1, name=f"inception_{name}_3x3_reduce"
+        )
+        self._conv3 = ConvLayer(filter3R, filter3, 3, name=f"inception_{name}_3x3")
+        self._conv5r = ConvLayer(
+            input_channels, filter5R, 1, name=f"inception_{name}_5x5_reduce"
+        )
+        self._conv5 = ConvLayer(filter5R, filter5, 5, name=f"inception_{name}_5x5")
         self._pool = MaxPool2d(kernel_size=3, stride=1, padding=1)
 
-        self._convprj = ConvLayer(input_channels, proj, 1, name="inception_" + name + "_3x3_proj")
+        self._convprj = ConvLayer(
+            input_channels, proj, 1, name=f"inception_{name}_3x3_proj"
+        )
 
     def forward(self, inputs: paddle.Tensor):
         conv1 = self._conv1(inputs)

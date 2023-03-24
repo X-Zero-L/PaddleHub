@@ -47,20 +47,26 @@ class DarkNet(object):
             stride=stride,
             padding=padding,
             act=None,
-            param_attr=ParamAttr(name=name + ".conv.weights"),
-            bias_attr=False)
+            param_attr=ParamAttr(name=f"{name}.conv.weights"),
+            bias_attr=False,
+        )
 
-        bn_name = name + ".bn"
-        bn_param_attr = ParamAttr(regularizer=L2Decay(float(self.norm_decay)), name=bn_name + '.scale')
-        bn_bias_attr = ParamAttr(regularizer=L2Decay(float(self.norm_decay)), name=bn_name + '.offset')
+        bn_name = f"{name}.bn"
+        bn_param_attr = ParamAttr(
+            regularizer=L2Decay(float(self.norm_decay)), name=f'{bn_name}.scale'
+        )
+        bn_bias_attr = ParamAttr(
+            regularizer=L2Decay(float(self.norm_decay)), name=f'{bn_name}.offset'
+        )
 
         out = fluid.layers.batch_norm(
             input=conv,
             act=None,
             param_attr=bn_param_attr,
             bias_attr=bn_bias_attr,
-            moving_mean_name=bn_name + '.mean',
-            moving_variance_name=bn_name + '.var')
+            moving_mean_name=f'{bn_name}.mean',
+            moving_variance_name=f'{bn_name}.var',
+        )
 
         # leaky relu here has `alpha` as 0.1, can not be set by
         # `act` param in fluid.layers.batch_norm above.
@@ -73,15 +79,28 @@ class DarkNet(object):
         return self._conv_norm(input, ch_out=ch_out, filter_size=filter_size, stride=stride, padding=padding, name=name)
 
     def basicblock(self, input, ch_out, name=None):
-        conv1 = self._conv_norm(input, ch_out=ch_out, filter_size=1, stride=1, padding=0, name=name + ".0")
-        conv2 = self._conv_norm(conv1, ch_out=ch_out * 2, filter_size=3, stride=1, padding=1, name=name + ".1")
-        out = fluid.layers.elementwise_add(x=input, y=conv2, act=None)
-        return out
+        conv1 = self._conv_norm(
+            input,
+            ch_out=ch_out,
+            filter_size=1,
+            stride=1,
+            padding=0,
+            name=f"{name}.0",
+        )
+        conv2 = self._conv_norm(
+            conv1,
+            ch_out=ch_out * 2,
+            filter_size=3,
+            stride=1,
+            padding=1,
+            name=f"{name}.1",
+        )
+        return fluid.layers.elementwise_add(x=input, y=conv2, act=None)
 
     def layer_warp(self, block_func, input, ch_out, count, name=None):
-        out = block_func(input, ch_out=ch_out, name='{}.0'.format(name))
+        out = block_func(input, ch_out=ch_out, name=f'{name}.0')
         for j in six.moves.xrange(1, count):
-            out = block_func(out, ch_out=ch_out, name='{}.{}'.format(name, j))
+            out = block_func(out, ch_out=ch_out, name=f'{name}.{j}')
         return out
 
     def __call__(self, input):
@@ -92,11 +111,20 @@ class DarkNet(object):
         :Returns: The last variables of each stage.
         """
         stages, block_func = self.depth_cfg[self.depth]
-        stages = stages[0:5]
+        stages = stages[:5]
         conv = self._conv_norm(
-            input=input, ch_out=32, filter_size=3, stride=1, padding=1, name=self.prefix_name + "yolo_input")
+            input=input,
+            ch_out=32,
+            filter_size=3,
+            stride=1,
+            padding=1,
+            name=f"{self.prefix_name}yolo_input",
+        )
         downsample_ = self._downsample(
-            input=conv, ch_out=conv.shape[1] * 2, name=self.prefix_name + "yolo_input.downsample")
+            input=conv,
+            ch_out=conv.shape[1] * 2,
+            name=f"{self.prefix_name}yolo_input.downsample",
+        )
         blocks = []
         for i, stage in enumerate(stages):
             block = self.layer_warp(
@@ -104,20 +132,23 @@ class DarkNet(object):
                 input=downsample_,
                 ch_out=32 * 2**i,
                 count=stage,
-                name=self.prefix_name + "stage.{}".format(i))
+                name=f"{self.prefix_name}stage.{i}",
+            )
             blocks.append(block)
             if i < len(stages) - 1:  # do not downsaple in the last stage
                 downsample_ = self._downsample(
-                    input=block, ch_out=block.shape[1] * 2, name=self.prefix_name + "stage.{}.downsample".format(i))
-        if self.get_prediction:
-            pool = fluid.layers.pool2d(input=block, pool_type='avg', global_pooling=True)
-            stdv = 1.0 / math.sqrt(pool.shape[1] * 1.0)
-            out = fluid.layers.fc(
-                input=pool,
-                size=self.class_dim,
-                param_attr=ParamAttr(initializer=fluid.initializer.Uniform(-stdv, stdv), name='fc_weights'),
-                bias_attr=ParamAttr(name='fc_offset'))
-            out = fluid.layers.softmax(out)
-            return out
-        else:
+                    input=block,
+                    ch_out=block.shape[1] * 2,
+                    name=f"{self.prefix_name}stage.{i}.downsample",
+                )
+        if not self.get_prediction:
             return blocks
+        pool = fluid.layers.pool2d(input=block, pool_type='avg', global_pooling=True)
+        stdv = 1.0 / math.sqrt(pool.shape[1] * 1.0)
+        out = fluid.layers.fc(
+            input=pool,
+            size=self.class_dim,
+            param_attr=ParamAttr(initializer=fluid.initializer.Uniform(-stdv, stdv), name='fc_weights'),
+            bias_attr=ParamAttr(name='fc_offset'))
+        out = fluid.layers.softmax(out)
+        return out

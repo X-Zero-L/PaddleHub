@@ -138,15 +138,18 @@ class VoiceCloner(paddle.nn.Layer):
 
     @paddle.no_grad()
     def generate(self, data: Union[str, List[str]], use_gpu: bool = False):
-        assert self._speaker_embedding is not None, f'Set speaker embedding before voice cloning.'
+        assert (
+            self._speaker_embedding is not None
+        ), 'Set speaker embedding before voice cloning.'
 
         if isinstance(data, str):
             data = [data]
         elif isinstance(data, list):
-            assert len(data) > 0 and isinstance(data[0],
-                                                str) and len(data[0]) > 0, f'Input data should be str of List[str].'
+            assert (
+                len(data) > 0 and isinstance(data[0], str) and len(data[0]) > 0
+            ), 'Input data should be str of List[str].'
         else:
-            raise Exception(f'Input data should be str of List[str].')
+            raise Exception('Input data should be str of List[str].')
 
         paddle.set_device('gpu') if use_gpu else paddle.set_device('cpu')
         files = []

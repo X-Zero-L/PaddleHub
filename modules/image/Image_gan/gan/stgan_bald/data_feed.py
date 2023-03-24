@@ -22,31 +22,33 @@ def reader(images=None, paths=None, org_labels=None, target_labels=None):
     Yield:
         each (collections.OrderedDict): info of original image, preprocessed image.
     """
-    component = list()
+    component = []
     if paths:
         for i, im_path in enumerate(paths):
             each = OrderedDict()
-            assert os.path.isfile(im_path), "The {} isn't a valid file path.".format(im_path)
+            assert os.path.isfile(im_path), f"The {im_path} isn't a valid file path."
             im = cv2.imread(im_path)
             each['org_im'] = im
             each['org_im_path'] = im_path
             each['org_label'] = np.array(org_labels[i]).astype('float32')
-            if not target_labels:
-                each['target_label'] = np.array(org_labels[i]).astype('float32')
-            else:
-                each['target_label'] = np.array(target_labels[i]).astype('float32')
+            each['target_label'] = (
+                np.array(target_labels[i]).astype('float32')
+                if target_labels
+                else np.array(org_labels[i]).astype('float32')
+            )
             component.append(each)
     if images is not None:
         assert type(images) is list, "images should be a list."
         for i, im in enumerate(images):
             each = OrderedDict()
             each['org_im'] = im
-            each['org_im_path'] = 'ndarray_time={}'.format(round(time.time(), 6) * 1e6)
+            each['org_im_path'] = f'ndarray_time={round(time.time(), 6) * 1000000.0}'
             each['org_label'] = np.array(org_labels[i]).astype('float32')
-            if not target_labels:
-                each['target_label'] = np.array(org_labels[i]).astype('float32')
-            else:
-                each['target_label'] = np.array(target_labels[i]).astype('float32')
+            each['target_label'] = (
+                np.array(target_labels[i]).astype('float32')
+                if target_labels
+                else np.array(org_labels[i]).astype('float32')
+            )
             component.append(each)
 
     for element in component:

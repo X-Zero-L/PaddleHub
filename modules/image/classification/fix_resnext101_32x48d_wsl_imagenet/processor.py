@@ -47,7 +47,7 @@ def postprocess(data_out, label_list, top_k):
     for result in data_out:
         result_i = softmax(result)
         output_i = {}
-        indexs = np.argsort(result_i)[::-1][0:top_k]
+        indexs = np.argsort(result_i)[::-1][:top_k]
         for index in indexs:
             label = label_list[index].split(',')[0]
             output_i[label] = float(result_i[index])

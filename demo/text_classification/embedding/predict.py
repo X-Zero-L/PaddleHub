@@ -51,4 +51,4 @@ if __name__ == '__main__':
     results = model.predict(
         data, max_seq_len=args.max_seq_len, batch_size=args.batch_size, use_gpu=args.use_gpu, return_result=False)
     for idx, text in enumerate(data):
-        print('Data: {} \t Lable: {}'.format(text[0], results[idx]))
+        print(f'Data: {text[0]} \t Lable: {results[idx]}')

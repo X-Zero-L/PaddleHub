@@ -115,7 +115,7 @@ class Inference:
         consis_mask = np.float32(calculate_consis_mask(source_input[1], reference_input[1]))
         consis_mask = paddle.to_tensor(np.expand_dims(consis_mask, 0))
 
-        if not (source_input and reference_input):
+        if not source_input or not reference_input:
             if with_face:
                 return None, None
             return
@@ -145,10 +145,7 @@ class Inference:
         result = paddle.divide(result, max_ - min_ + 1e-5)
         img = toImage(result)
 
-        if with_face:
-            return img, crop_face
-
-        return img
+        return (img, crop_face) if with_face else img
 
 
 class PSGANPredictor:

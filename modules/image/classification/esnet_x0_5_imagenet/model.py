@@ -66,7 +66,7 @@ class TheseusLayer(nn.Layer):
 
     def init_res(self, stages_pattern, return_patterns=None, return_stages=None):
         if return_patterns and return_stages:
-            msg = f"The 'return_patterns' would be ignored when 'return_stages' is set."
+            msg = "The 'return_patterns' would be ignored when 'return_stages' is set."
             return_stages = None
 
         if return_stages is True:
@@ -263,7 +263,7 @@ def parse_pattern_str(pattern: str, parent_layer: nn.Layer) -> Union[None, List[
         return None
 
     layer_list = []
-    while len(pattern_list) > 0:
+    while pattern_list:
         if '[' in pattern_list[0]:
             target_layer_name = pattern_list[0].split('[')[0]
             target_layer_index = pattern_list[0].split('[')[1].split(']')[0]
@@ -292,7 +292,7 @@ def parse_pattern_str(pattern: str, parent_layer: nn.Layer) -> Union[None, List[
 
 
 def channel_shuffle(x, groups):
-    batch_size, num_channels, height, width = x.shape[0:4]
+    batch_size, num_channels, height, width = x.shape[:4]
     channels_per_group = num_channels // groups
     x = reshape(x=x, shape=[batch_size, groups, channels_per_group, height, width])
     x = transpose(x=x, perm=[0, 2, 1, 3, 4])
@@ -502,5 +502,4 @@ def ESNet_x0_5(pretrained=False, use_ssld=False, **kwargs):
     Returns:
         model: nn.Layer. Specific `ESNet_x0_5` model depends on args.
     """
-    model = ESNet(scale=0.5, stages_pattern=MODEL_STAGES_PATTERN["ESNet"], **kwargs)
-    return model
+    return ESNet(scale=0.5, stages_pattern=MODEL_STAGES_PATTERN["ESNet"], **kwargs)

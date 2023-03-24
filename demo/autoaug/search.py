@@ -47,7 +47,7 @@ def search_test():
         fitter=HubFitterClassifer)
     result = exper.search()  # 开始搜索任务
     policy = result.get_best_policy()  # 最佳策略获取， policy格式见 搜索结果应用格式
-    print("policy is:{}".format(policy))
+    print(f"policy is:{policy}")
     dump_path = os.path.join(workspace, "auto_aug_config.json")
     result.dump_best_policy(path=dump_path)
 

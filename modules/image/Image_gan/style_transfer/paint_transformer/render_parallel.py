@@ -211,7 +211,7 @@ def render_parallel(original_img, net_g, meta_brushes):
         original_img_pad = render_utils.pad(original_img, original_img_pad_size, original_img_pad_size)
         final_result = paddle.zeros_like(original_img)
 
-        for layer in range(0, K + 1):
+        for layer in range(K + 1):
             layer_size = patch_size * (2**layer)
 
             img = F.interpolate(original_img_pad, (layer_size, layer_size))
@@ -243,5 +243,7 @@ def render_parallel(original_img, net_g, meta_brushes):
         final_result = param2img_parallel(param, decision, meta_brushes, final_result)
 
         final_result = final_result[:, :, border_size:-border_size, border_size:-border_size]
-        final_result = (final_result.numpy().squeeze().transpose([1, 2, 0])[:, :, ::-1] * 255).astype(np.uint8)
-        return final_result
+        return (
+            final_result.numpy().squeeze().transpose([1, 2, 0])[:, :, ::-1]
+            * 255
+        ).astype(np.uint8)

@@ -60,8 +60,7 @@ class Hooks():
     def __init__(self, ms, hook_func, is_forward=True, detach=True):
         self.hooks = []
         try:
-            for m in ms:
-                self.hooks.append(Hook(m, hook_func, is_forward, detach))
+            self.hooks.extend(Hook(m, hook_func, is_forward, detach) for m in ms)
         except Exception as e:
             pass
 
@@ -162,15 +161,14 @@ class Spectralnorm(paddle.nn.Layer):
     def forward(self, x):
         weight = self.spectral_norm(self.weight_orig)
         self.layer.weight = weight
-        out = self.layer(x)
-        return out
+        return self.layer(x)
 
 
 def video2frames(video_path, outpath, **kargs):
     def _dict2str(kargs):
         cmd_str = ''
         for k, v in kargs.items():
-            cmd_str += (' ' + str(k) + ' ' + str(v))
+            cmd_str += f' {str(k)} {str(v)}'
         return cmd_str
 
     ffmpeg = ['ffmpeg ', ' -y -loglevel ', ' error ']
@@ -181,7 +179,7 @@ def video2frames(video_path, outpath, **kargs):
         os.makedirs(out_full_path)
 
     # video file name
-    outformat = out_full_path + '/%08d.png'
+    outformat = f'{out_full_path}/%08d.png'
 
     cmd = ffmpeg
     cmd = ffmpeg + [' -i ', video_path, ' -start_number ', ' 0 ', outformat]
@@ -205,7 +203,7 @@ def frames2video(frame_path, video_path, r):
     cmd = ''.join(cmd)
 
     if os.system(cmd) != 0:
-        raise RuntimeError('ffmpeg process video: {} error'.format(video_path))
+        raise RuntimeError(f'ffmpeg process video: {video_path} error')
 
     sys.stdout.flush()
 

@@ -111,12 +111,23 @@ class ResNet(nn.Layer):
                 norm_layer(planes * block.expansion),
             )
 
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, 1, 64, previous_dilation, norm_layer))
+        layers = [
+            block(
+                self.inplanes,
+                planes,
+                stride,
+                downsample,
+                1,
+                64,
+                previous_dilation,
+                norm_layer,
+            )
+        ]
         self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, norm_layer=norm_layer))
-
+        layers.extend(
+            block(self.inplanes, planes, norm_layer=norm_layer)
+            for _ in range(1, blocks)
+        )
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -148,19 +159,15 @@ class SpinalNet_ResNet101(nn.Layer):
     def __init__(self, label_list: list = None, load_checkpoint: str = None):
         super(SpinalNet_ResNet101, self).__init__()
 
-        if label_list is not None:
-            self.labels = label_list
-            class_dim = len(self.labels)
-        else:
+        if label_list is None:
             label_list = []
             label_file = os.path.join(self.directory, 'label_list.txt')
             files = open(label_file)
-            for line in files.readlines():
+            for line in files:
                 line = line.strip('\n')
                 label_list.append(line)
-            self.labels = label_list
-            class_dim = len(self.labels)
-
+        self.labels = label_list
+        class_dim = len(self.labels)
         self.backbone = ResNet()
 
         half_in_size = round(2048 / 2)

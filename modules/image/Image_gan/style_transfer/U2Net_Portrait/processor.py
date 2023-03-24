@@ -21,7 +21,7 @@ class Processor():
         # 读取数据列表
         if paths is not None:
             for im_path in paths:
-                assert os.path.isfile(im_path), "The {} isn't a valid file path.".format(im_path)
+                assert os.path.isfile(im_path), f"The {im_path} isn't a valid file path."
                 im = cv2.imread(im_path)
                 datas.append(im)
 
@@ -33,11 +33,11 @@ class Processor():
 
     # 预处理
     def preprocess(self, imgs, batch_size=1, face_detection=True, scale=1):
+        im_faces = []
         if face_detection:
             # face detection
             face_detector = hub.Module(name="pyramidbox_lite_mobile")
             results = face_detector.face_detection(images=imgs, use_gpu=False, visualization=False, confs_threshold=0.5)
-            im_faces = []
             for datas, img in zip(results, imgs):
                 for face in datas['data']:
                     # get detection result
@@ -46,9 +46,9 @@ class Processor():
                     # square crop
                     pad = max(int(scale * (r - l)), int(scale * (b - t)))
                     c_w, c_h = (r - l) // 2 + l, (b - t) // 2 + t
-                    top = 0 if c_h - pad < 0 else c_h - pad
+                    top = max(c_h - pad, 0)
                     bottom = pad + c_h
-                    left = 0 if c_w - pad < 0 else c_w - pad
+                    left = max(c_w - pad, 0)
                     right = pad + c_w
                     crop = img[top:bottom, left:right]
 
@@ -56,31 +56,34 @@ class Processor():
                     im_face = cv2.resize(crop, (512, 512), interpolation=cv2.INTER_AREA)
                     im_faces.append(im_face)
         else:
-            im_faces = []
             for img in imgs:
                 h, w = img.shape[:2]
                 if h > w:
-                    if (h - w) % 2 == 0:
-                        img = np.pad(
-                            img, ((0, 0), ((h - w) // 2, (h - w) // 2), (0, 0)),
+                    img = (
+                        np.pad(
+                            img,
+                            ((0, 0), ((h - w) // 2, (h - w) // 2), (0, 0)),
                             mode='constant',
-                            constant_values=((255, 255), (255, 255), (255, 255)))
-                    else:
-                        img = np.pad(
-                            img, ((0, 0), ((h - w) // 2, (h - w) // 2 + 1), (0, 0)),
+                            constant_values=((255, 255), (255, 255), (255, 255)),
+                        )
+                        if (h - w) % 2 == 0
+                        else np.pad(
+                            img,
+                            ((0, 0), ((h - w) // 2, (h - w) // 2 + 1), (0, 0)),
                             mode='constant',
-                            constant_values=((255, 255), (255, 255), (255, 255)))
+                            constant_values=((255, 255), (255, 255), (255, 255)),
+                        )
+                    )
+                elif (w - h) % 2 == 0:
+                    img = np.pad(
+                        img, (((w - h) // 2, (w - h) // 2), (0, 0), (0, 0)),
+                        mode='constant',
+                        constant_values=((255, 255), (255, 255), (255, 255)))
                 else:
-                    if (w - h) % 2 == 0:
-                        img = np.pad(
-                            img, (((w - h) // 2, (w - h) // 2), (0, 0), (0, 0)),
-                            mode='constant',
-                            constant_values=((255, 255), (255, 255), (255, 255)))
-                    else:
-                        img = np.pad(
-                            img, (((w - h) // 2, (w - h) // 2 + 1), (0, 0), (0, 0)),
-                            mode='constant',
-                            constant_values=((255, 255), (255, 255), (255, 255)))
+                    img = np.pad(
+                        img, (((w - h) // 2, (w - h) // 2 + 1), (0, 0), (0, 0)),
+                        mode='constant',
+                        constant_values=((255, 255), (255, 255), (255, 255)))
                 im_face = cv2.resize(img, (512, 512), interpolation=cv2.INTER_AREA)
                 im_faces.append(im_face)
 
@@ -111,9 +114,7 @@ class Processor():
         ma = np.max(d)
         mi = np.min(d)
 
-        dn = (d - mi) / (ma - mi)
-
-        return dn
+        return (d - mi) / (ma - mi)
 
     # 后处理
     def postprocess(self, outputs, visualization=False, output_dir='output'):
