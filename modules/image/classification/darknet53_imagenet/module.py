@@ -37,12 +37,10 @@ class DarkNet53(hub.Module):
         return 224
 
     def get_pretrained_images_mean(self):
-        im_mean = np.array([0.485, 0.456, 0.406]).reshape(1, 3)
-        return im_mean
+        return np.array([0.485, 0.456, 0.406]).reshape(1, 3)
 
     def get_pretrained_images_std(self):
-        im_std = np.array([0.229, 0.224, 0.225]).reshape(1, 3)
-        return im_std
+        return np.array([0.229, 0.224, 0.225]).reshape(1, 3)
 
     def _set_config(self):
         """
@@ -84,16 +82,13 @@ class DarkNet53(hub.Module):
         context_prog = input_image.block.program if input_image else fluid.Program()
         startup_program = fluid.Program()
         with fluid.program_guard(context_prog, startup_program):
-            image = input_image if input_image else fluid.data(
-                name='image', shape=[-1, 3, 224, 224], dtype='float32', lod_level=0)
+            image = input_image or fluid.data(
+                name='image', shape=[-1, 3, 224, 224], dtype='float32', lod_level=0
+            )
             backbone = DarkNet(get_prediction=get_prediction)
             out = backbone(image)
             inputs = {'image': image}
-            if get_prediction:
-                outputs = {'pred_out': out}
-            else:
-                outputs = {'body_feats': out}
-
+            outputs = {'pred_out': out} if get_prediction else {'body_feats': out}
             place = fluid.CPUPlace()
             exe = fluid.Executor(place)
             if pretrained:
@@ -127,11 +122,8 @@ class DarkNet53(hub.Module):
             self.pred_out = outputs['pred_out']
         place = fluid.CUDAPlace(0) if use_gpu else fluid.CPUPlace()
         exe = fluid.Executor(place)
-        all_images = []
-        paths = paths if paths else []
-        for yield_data in test_reader(paths, images):
-            all_images.append(yield_data)
-
+        paths = paths or []
+        all_images = list(test_reader(paths, images))
         images_num = len(all_images)
         loop_num = int(np.ceil(images_num / batch_size))
 
@@ -151,7 +143,7 @@ class DarkNet53(hub.Module):
                 result = self.gpu_predictor.run([data_tensor])
             else:
                 result = self.cpu_predictor.run([data_tensor])
-            for i, res in enumerate(result[0].as_ndarray()):
+            for res in result[0].as_ndarray():
                 res_dict = {}
                 pred_label = np.argsort(res)[::-1][:top_k]
                 for k in pred_label:
@@ -184,7 +176,7 @@ class DarkNet53(hub.Module):
             input_data = [args.input_path]
         elif args.input_file:
             if not os.path.exists(args.input_file):
-                raise RuntimeError("File %s is not exist." % args.input_file)
+                raise RuntimeError(f"File {args.input_file} is not exist.")
             else:
                 input_data = txt_parser.parse(args.input_file, use_strip=True)
         return input_data
@@ -192,10 +184,11 @@ class DarkNet53(hub.Module):
     @runnable
     def run_cmd(self, argvs):
         self.parser = argparse.ArgumentParser(
-            description="Run the {}".format(self.name),
-            prog="hub run {}".format(self.name),
+            description=f"Run the {self.name}",
+            prog=f"hub run {self.name}",
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_config_group = self.parser.add_argument_group(
             title="Config options", description="Run configuration for controlling module behavior, not required.")

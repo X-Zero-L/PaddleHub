@@ -11,7 +11,7 @@ def video2frames(video_path, outpath, **kargs):
     def _dict2str(kargs):
         cmd_str = ''
         for k, v in kargs.items():
-            cmd_str += (' ' + str(k) + ' ' + str(v))
+            cmd_str += f' {str(k)} {str(v)}'
         return cmd_str
 
     ffmpeg = ['ffmpeg ', ' -y -loglevel ', ' error ']
@@ -22,7 +22,7 @@ def video2frames(video_path, outpath, **kargs):
         os.makedirs(out_full_path)
 
     # video file name
-    outformat = out_full_path + '/%08d.png'
+    outformat = f'{out_full_path}/%08d.png'
 
     cmd = ffmpeg
     cmd = ffmpeg + [' -i ', video_path, ' -start_number ', ' 0 ', outformat]
@@ -42,7 +42,7 @@ def frames2video(frame_path, video_path, r):
     cmd = ''.join(cmd)
 
     if os.system(cmd) != 0:
-        raise RuntimeError('ffmpeg process video: {} error'.format(video_path))
+        raise RuntimeError(f'ffmpeg process video: {video_path} error')
 
     sys.stdout.flush()
 

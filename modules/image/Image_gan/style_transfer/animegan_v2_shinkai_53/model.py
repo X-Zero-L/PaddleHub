@@ -51,11 +51,7 @@ class Model():
         config.switch_use_feed_fetch_ops(False)
         config.switch_specify_input_names(True)
 
-        # 通过参数加载模型预测器
-        predictor = create_predictor(config)
-
-        # 返回预测器
-        return predictor
+        return create_predictor(config)
 
     # 模型预测函数
     def predict(self, input_datas):
@@ -69,8 +65,4 @@ class Model():
             output = self.output_handle.copy_to_cpu()
             outputs.append(output)
 
-        # 预测结果合并
-        outputs = np.concatenate(outputs, 0)
-
-        # 返回预测结果
-        return outputs
+        return np.concatenate(outputs, 0)

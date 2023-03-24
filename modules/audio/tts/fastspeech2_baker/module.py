@@ -53,7 +53,9 @@ class FastSpeech(paddle.nn.Layer):
         fastspeech2_checkpoint = os.path.join(fastspeech2_res_dir, 'snapshot_iter_76000.pdz')
         model = FastSpeech2(idim=vocab_size, odim=fastspeech2_config.n_mels, **fastspeech2_config["model"])
         model.set_state_dict(paddle.load(fastspeech2_checkpoint)["main_params"])
-        logger.info('Load fastspeech2 params from %s' % os.path.abspath(fastspeech2_checkpoint))
+        logger.info(
+            f'Load fastspeech2 params from {os.path.abspath(fastspeech2_checkpoint)}'
+        )
         model.eval()
 
         # vocoder
@@ -64,7 +66,7 @@ class FastSpeech(paddle.nn.Layer):
         pwg_checkpoint = os.path.join(pwg_res_dir, 'pwg_snapshot_iter_400000.pdz')
         vocoder = PWGGenerator(**pwg_config["generator_params"])
         vocoder.set_state_dict(paddle.load(pwg_checkpoint)["generator_params"])
-        logger.info('Load vocoder params from %s' % os.path.abspath(pwg_checkpoint))
+        logger.info(f'Load vocoder params from {os.path.abspath(pwg_checkpoint)}')
         vocoder.remove_weight_norm()
         vocoder.eval()
 
@@ -101,25 +103,24 @@ class FastSpeech(paddle.nn.Layer):
             with paddle.no_grad():
                 mel = self.fastspeech2_inference(part_phone_ids)
                 temp_wav = self.pwg_inference(mel)
-                if wav is None:
-                    wav = temp_wav
-                else:
-                    wav = paddle.concat([wav, temp_wav])
-
+                wav = temp_wav if wav is None else paddle.concat([wav, temp_wav])
         return wav
 
     @serving
     def generate(self, sentences: List[str], device='cpu'):
-        assert isinstance(sentences, list) and isinstance(sentences[0], str), \
-            'Input data should be List[str], but got {}'.format(type(sentences))
+        assert isinstance(sentences, list) and isinstance(
+            sentences[0], str
+        ), f'Input data should be List[str], but got {type(sentences)}'
 
         paddle.set_device(device)
         wav_files = []
         for i, sentence in enumerate(sentences):
             wav = self(sentence)
-            wav_file = str(self.output_dir.absolute() / (str(i + 1) + ".wav"))
+            wav_file = str(self.output_dir.absolute() / f"{str(i + 1)}.wav")
             sf.write(wav_file, wav.numpy(), samplerate=self.samplerate)
             wav_files.append(wav_file)
 
-        logger.info('{} wave files have been generated in {}'.format(len(sentences), self.output_dir.absolute()))
+        logger.info(
+            f'{len(sentences)} wave files have been generated in {self.output_dir.absolute()}'
+        )
         return wav_files

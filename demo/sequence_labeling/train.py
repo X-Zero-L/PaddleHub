@@ -36,7 +36,7 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
     label_list = MSRA_NER.label_list
-    label_map = {idx: label for idx, label in enumerate(label_list)}
+    label_map = dict(enumerate(label_list))
 
     model = hub.Module(
         name='ernie_tiny',

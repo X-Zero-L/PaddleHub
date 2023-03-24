@@ -117,7 +117,7 @@ def run_alignment(image):
             min(crop[3] + border, img.size[1]))
     if crop[2] - crop[0] < img.size[0] or crop[3] - crop[1] < img.size[1]:
         img = img.crop(crop)
-        quad -= crop[0:2]
+        quad -= crop[:2]
 
     # Pad.
     pad = (int(np.floor(min(quad[:, 0]))), int(np.floor(min(quad[:, 1]))), int(np.ceil(max(quad[:, 0]))),
@@ -162,18 +162,14 @@ class Pixel2Style2PixelPredictor:
                  channel_multiplier=2):
 
         if weight_path is None and model_type != 'default':
-            if model_type in model_cfgs.keys():
-                weight_path = get_path_from_url(model_cfgs[model_type]['model_urls'])
-                size = model_cfgs[model_type].get('size', size)
-                style_dim = model_cfgs[model_type].get('style_dim', style_dim)
-                n_mlp = model_cfgs[model_type].get('n_mlp', n_mlp)
-                channel_multiplier = model_cfgs[model_type].get('channel_multiplier', channel_multiplier)
-                checkpoint = paddle.load(weight_path)
-            else:
+            if model_type not in model_cfgs.keys():
                 raise ValueError('Predictor need a weight path or a pretrained model type')
-        else:
-            checkpoint = paddle.load(weight_path)
-
+            weight_path = get_path_from_url(model_cfgs[model_type]['model_urls'])
+            size = model_cfgs[model_type].get('size', size)
+            style_dim = model_cfgs[model_type].get('style_dim', style_dim)
+            n_mlp = model_cfgs[model_type].get('n_mlp', n_mlp)
+            channel_multiplier = model_cfgs[model_type].get('channel_multiplier', channel_multiplier)
+        checkpoint = paddle.load(weight_path)
         opts = checkpoint.pop('opts')
         opts = AttrDict(opts)
         opts['size'] = size

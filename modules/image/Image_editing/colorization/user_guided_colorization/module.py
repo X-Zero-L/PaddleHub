@@ -193,8 +193,7 @@ class UserGuidedColorization(nn.Layer):
         self.pre_func = ColorizePreprocess(ab_thresh=0., p=prob, points=num_point)
 
     def preprocess(self, inputs: paddle.Tensor):
-        output = self.pre_func(inputs)
-        return output
+        return self.pre_func(inputs)
 
     def forward(self,
                 input_A: paddle.Tensor,
@@ -217,14 +216,11 @@ class UserGuidedColorization(nn.Layer):
             conv9_up = self.model9up(conv8_3.detach()) + self.model2short9(conv2_2.detach())
             conv9_3 = self.model9(conv9_up)
             conv10_up = self.model10up(conv9_3) + self.model1short10(conv1_2.detach())
-            conv10_2 = self.model10(conv10_up)
-            out_reg = self.model_out(conv10_2)
         else:
             out_class = self.model_class(conv8_3.detach())
             conv9_up = self.model9up(conv8_3) + self.model2short9(conv2_2)
             conv9_3 = self.model9(conv9_up)
             conv10_up = self.model10up(conv9_3) + self.model1short10(conv1_2)
-            conv10_2 = self.model10(conv10_up)
-            out_reg = self.model_out(conv10_2)
-
+        conv10_2 = self.model10(conv10_up)
+        out_reg = self.model_out(conv10_2)
         return out_class, out_reg

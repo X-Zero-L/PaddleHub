@@ -87,11 +87,10 @@ class FirstOrderPredictor:
             if mobile_net:
                 vox_cpk_weight_url = 'https://paddlegan.bj.bcebos.com/applications/first_order_model/vox-mobile.pdparams'
 
+            elif self.image_size == 512:
+                vox_cpk_weight_url = 'https://paddlegan.bj.bcebos.com/applications/first_order_model/vox-cpk-512.pdparams'
             else:
-                if self.image_size == 512:
-                    vox_cpk_weight_url = 'https://paddlegan.bj.bcebos.com/applications/first_order_model/vox-cpk-512.pdparams'
-                else:
-                    vox_cpk_weight_url = 'https://paddlegan.bj.bcebos.com/applications/first_order_model/vox-cpk.pdparams'
+                vox_cpk_weight_url = 'https://paddlegan.bj.bcebos.com/applications/first_order_model/vox-cpk.pdparams'
             weight_path = get_path_from_url(vox_cpk_weight_url)
 
         self.weight_path = weight_path
@@ -130,7 +129,7 @@ class FirstOrderPredictor:
                 i = self.best_frame if self.best_frame is not None else self.find_best_frame_func(
                     source_image, driving_video)
 
-                print("Best frame: " + str(i))
+                print(f"Best frame: {str(i)}")
                 driving_forward = driving_video[i:]
                 driving_backward = driving_video[:(i + 1)][::-1]
                 predictions_forward = self.make_animation(
@@ -167,14 +166,13 @@ class FirstOrderPredictor:
                 driving_video.append(im)
         except RuntimeError:
             print("Read driving video error!")
-            pass
         reader.close()
 
         driving_video = [cv2.resize(frame, (self.image_size, self.image_size)) / 255.0 for frame in driving_video]
         results = []
 
         bboxes = self.extract_bbox(source_image.copy())
-        print(str(len(bboxes)) + " persons have been detected")
+        print(f"{len(bboxes)} persons have been detected")
 
         # for multi person
         for rec in bboxes:
@@ -207,7 +205,9 @@ class FirstOrderPredictor:
                     frame = cv2.copyTo(patch, mask, frame)
 
             out_frame.append(frame)
-        imageio.mimsave(os.path.join(self.output, self.filename), [frame for frame in out_frame], fps=fps)
+        imageio.mimsave(
+            os.path.join(self.output, self.filename), list(out_frame), fps=fps
+        )
 
     def load_checkpoints(self, config, checkpoint_path):
 
@@ -239,20 +239,23 @@ class FirstOrderPredictor:
 
             driving = paddle.to_tensor(np.array(driving_video).astype(np.float32)).transpose([0, 3, 1, 2])
             kp_source = kp_detector(source)
-            kp_driving_initial = kp_detector(driving[0:1])
-            kp_source_batch = {}
-            kp_source_batch["value"] = paddle.tile(kp_source["value"], repeat_times=[self.batch_size, 1, 1])
+            kp_driving_initial = kp_detector(driving[:1])
+            kp_source_batch = {
+                "value": paddle.tile(
+                    kp_source["value"], repeat_times=[self.batch_size, 1, 1]
+                )
+            }
             kp_source_batch["jacobian"] = paddle.tile(kp_source["jacobian"], repeat_times=[self.batch_size, 1, 1, 1])
             source = paddle.tile(source, repeat_times=[self.batch_size, 1, 1, 1])
             begin_idx = 0
-            for frame_idx in tqdm(range(int(np.ceil(float(driving.shape[0]) / self.batch_size)))):
+            for _ in tqdm(range(int(np.ceil(float(driving.shape[0]) / self.batch_size)))):
                 frame_num = min(self.batch_size, driving.shape[0] - begin_idx)
                 driving_frame = driving[begin_idx:begin_idx + frame_num]
                 kp_driving = kp_detector(driving_frame)
-                kp_source_img = {}
-                kp_source_img["value"] = kp_source_batch["value"][0:frame_num]
-                kp_source_img["jacobian"] = kp_source_batch["jacobian"][0:frame_num]
-
+                kp_source_img = {
+                    "value": kp_source_batch["value"][:frame_num],
+                    "jacobian": kp_source_batch["jacobian"][:frame_num],
+                }
                 kp_norm = normalize_kp(
                     kp_source=kp_source,
                     kp_driving=kp_driving,
@@ -261,7 +264,9 @@ class FirstOrderPredictor:
                     use_relative_jacobian=relative,
                     adapt_movement_scale=adapt_movement_scale)
 
-                out = generator(source[0:frame_num], kp_source=kp_source_img, kp_driving=kp_norm)
+                out = generator(
+                    source[:frame_num], kp_source=kp_source_img, kp_driving=kp_norm
+                )
                 img = np.transpose(out['prediction'].numpy(), [0, 2, 3, 1]) * 255.0
 
                 if self.face_enhancement:
@@ -336,8 +341,7 @@ class FirstOrderPredictor:
                     break
             if add_person:
                 results_box.append(results[i])
-        boxes = np.array(results_box)
-        return boxes
+        return np.array(results_box)
 
     def IOU(self, ax1, ay1, ax2, ay2, sa, bx1, by1, bx2, by2, sb):
         #sa = abs((ax2 - ax1) * (ay2 - ay1))
@@ -346,7 +350,4 @@ class FirstOrderPredictor:
         x2, y2 = min(ax2, bx2), min(ay2, by2)
         w = x2 - x1
         h = y2 - y1
-        if w < 0 or h < 0:
-            return 0.0
-        else:
-            return 1.0 * w * h / (sa + sb - w * h)
+        return 0.0 if w < 0 or h < 0 else 1.0 * w * h / (sa + sb - w * h)

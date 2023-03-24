@@ -29,8 +29,7 @@ def length_to_mask(length, max_len=None, dtype=None):
     if dtype is None:
         dtype = length.dtype
 
-    mask = paddle.to_tensor(mask, dtype=dtype)
-    return mask
+    return paddle.to_tensor(mask, dtype=dtype)
 
 
 class Conv1d(nn.Layer):
@@ -83,13 +82,11 @@ class Conv1d(nn.Layer):
         if stride > 1:
             n_steps = math.ceil(((L_in - kernel_size * dilation) / stride) + 1)
             L_out = stride * (n_steps - 1) + kernel_size * dilation
-            padding = [kernel_size // 2, kernel_size // 2]
+            return [kernel_size // 2, kernel_size // 2]
         else:
             L_out = (L_in - dilation * (kernel_size - 1) - 1) // stride + 1
 
-            padding = [(L_in - L_out) // 2, (L_in - L_out) // 2]
-
-        return padding
+            return [(L_in - L_out) // 2, (L_in - L_out) // 2]
 
 
 class BatchNorm1d(nn.Layer):
@@ -116,8 +113,7 @@ class BatchNorm1d(nn.Layer):
         )
 
     def forward(self, x):
-        x_n = self.norm(x)
-        return x_n
+        return self.norm(x)
 
 
 class TDNNBlock(nn.Layer):
@@ -153,7 +149,13 @@ class Res2NetBlock(nn.Layer):
         hidden_channel = out_channels // scale
 
         self.blocks = nn.LayerList(
-            [TDNNBlock(in_channel, hidden_channel, kernel_size=3, dilation=dilation) for i in range(scale - 1)])
+            [
+                TDNNBlock(
+                    in_channel, hidden_channel, kernel_size=3, dilation=dilation
+                )
+                for _ in range(scale - 1)
+            ]
+        )
         self.scale = scale
 
     def forward(self, x):
@@ -166,8 +168,7 @@ class Res2NetBlock(nn.Layer):
             else:
                 y_i = self.blocks[i - 1](x_i + y_i)
             y.append(y_i)
-        y = paddle.concat(y, axis=1)
-        return y
+        return paddle.concat(y, axis=1)
 
 
 class SEBlock(nn.Layer):
@@ -401,6 +402,7 @@ class Classifier(nn.Layer):
 
     def forward(self, x):
         emb = self.backbone(x.transpose([0, 2, 1])).transpose([0, 2, 1])
-        logits = F.linear(F.normalize(emb.squeeze(1)), F.normalize(self.params[0]).transpose([1, 0]))
-
-        return logits
+        return F.linear(
+            F.normalize(emb.squeeze(1)),
+            F.normalize(self.params[0]).transpose([1, 0]),
+        )

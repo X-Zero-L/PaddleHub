@@ -84,8 +84,7 @@ class DeOldifyPredictor(Module):
         orig_yuv = cv2.cvtColor(orig_np, cv2.COLOR_BGR2YUV)
         hires = np.copy(orig_yuv)
         hires[:, :, 1:3] = color_yuv[:, :, 1:3]
-        final = cv2.cvtColor(hires, cv2.COLOR_YUV2BGR)
-        return final
+        return cv2.cvtColor(hires, cv2.COLOR_YUV2BGR)
 
     def run_image(self, img):
         if isinstance(img, str):
@@ -133,9 +132,9 @@ class DeOldifyPredictor(Module):
 
         frame_pattern_combined = os.path.join(pred_frame_path, '%08d.png')
 
-        vid_out_path = os.path.join(output_path, '{}_deoldify_out.mp4'.format(base_name))
+        vid_out_path = os.path.join(output_path, f'{base_name}_deoldify_out.mp4')
         U.frames2video(frame_pattern_combined, vid_out_path, str(int(fps)))
-        print('Save video result at {}.'.format(vid_out_path))
+        print(f'Save video result at {vid_out_path}.')
 
         return frame_pattern_combined, vid_out_path
 
@@ -145,14 +144,13 @@ class DeOldifyPredictor(Module):
 
         if not U.is_image(input):
             return self.run_video(input)
-        else:
-            pred_img = self.run_image(input)
+        pred_img = self.run_image(input)
 
-            if self.output:
-                base_name = os.path.splitext(os.path.basename(input))[0]
-                out_path = os.path.join(self.output, base_name + '.png')
-                cv2.imwrite(out_path, pred_img)
-            return pred_img, out_path
+        if self.output:
+            base_name = os.path.splitext(os.path.basename(input))[0]
+            out_path = os.path.join(self.output, f'{base_name}.png')
+            cv2.imwrite(out_path, pred_img)
+        return pred_img, out_path
 
     @serving
     def serving_method(self, images, **kwargs):

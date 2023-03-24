@@ -74,7 +74,7 @@ class Esnet_x0_5_Imagenet:
         paddle.disable_static()
         place = 'gpu:0' if use_gpu else 'cpu'
         place = paddle.set_device(place)
-        if images == None and paths == None:
+        if images is None and paths is None:
             print('No image provided. Please input an image or a image path.')
             return
 
@@ -112,10 +112,12 @@ class Esnet_x0_5_Imagenet:
         """
         Run as a command.
         """
-        self.parser = argparse.ArgumentParser(description="Run the {} module.".format(self.name),
-                                              prog='hub run {}'.format(self.name),
-                                              usage='%(prog)s',
-                                              add_help=True)
+        self.parser = argparse.ArgumentParser(
+            description=f"Run the {self.name} module.",
+            prog=f'hub run {self.name}',
+            usage='%(prog)s',
+            add_help=True,
+        )
 
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_config_group = self.parser.add_argument_group(
@@ -123,11 +125,12 @@ class Esnet_x0_5_Imagenet:
         self.add_module_config_arg()
         self.add_module_input_arg()
         self.args = self.parser.parse_args(argvs)
-        results = self.classification(paths=[self.args.input_path],
-                                      use_gpu=self.args.use_gpu,
-                                      batch_size=self.args.batch_size,
-                                      top_k=self.args.top_k)
-        return results
+        return self.classification(
+            paths=[self.args.input_path],
+            use_gpu=self.args.use_gpu,
+            batch_size=self.args.batch_size,
+            top_k=self.args.top_k,
+        )
 
     @serving
     def serving_method(self, images, **kwargs):
@@ -135,8 +138,7 @@ class Esnet_x0_5_Imagenet:
         Run as a service.
         """
         images_decode = [base64_to_cv2(image) for image in images]
-        results = self.classification(images=images_decode, **kwargs)
-        return results
+        return self.classification(images=images_decode, **kwargs)
 
     def add_module_config_arg(self):
         """

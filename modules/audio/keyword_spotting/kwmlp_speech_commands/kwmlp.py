@@ -132,7 +132,15 @@ class KW_MLP(nn.Layer):
         self.prob_survival = prob_survival
 
         self.layers = nn.LayerList(
-            [Residual(P_Norm(dim, gMLPBlock(dim=dim, dim_ff=dim_ff, seq_len=num_patches))) for i in range(depth)])
+            [
+                Residual(
+                    P_Norm(
+                        dim, gMLPBlock(dim=dim, dim_ff=dim_ff, seq_len=num_patches)
+                    )
+                )
+                for _ in range(depth)
+            ]
+        )
 
         self.to_logits = nn.Sequential(nn.LayerNorm(dim), Reduce(axis=1), nn.Linear(dim, num_classes))
 

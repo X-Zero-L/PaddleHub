@@ -26,10 +26,7 @@ def cv2_to_base64(image):
 
 
 def read_images(paths):
-    images = []
-    for path in paths:
-        images.append(cv2.imread(path))
-    return images
+    return [cv2.imread(path) for path in paths]
 
 
 @moduleinfo(
@@ -52,7 +49,7 @@ class MODULE(hub.Module):
 
         res = []
         for iter_id in range(loop_num):
-            batch_data = list()
+            batch_data = []
             handle_id = iter_id * batch_size
             for image_id in range(batch_size):
                 try:
@@ -98,18 +95,18 @@ class MODULE(hub.Module):
         Run as a command.
         """
         self.parser = argparse.ArgumentParser(
-            description="Run the {} module.".format(self.name),
-            prog='hub run {}'.format(self.name),
+            description=f"Run the {self.name} module.",
+            prog=f'hub run {self.name}',
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_config_group = self.parser.add_argument_group(
             title="Config options", description="Run configuration for controlling module behavior, not required.")
         self.add_module_config_arg()
         self.add_module_input_arg()
         args = self.parser.parse_args(argvs)
-        results = self.predict(paths=[args.input_path], use_gpu=args.use_gpu)
-        return results
+        return self.predict(paths=[args.input_path], use_gpu=args.use_gpu)
 
     def add_module_config_arg(self):
         """

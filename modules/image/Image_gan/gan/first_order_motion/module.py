@@ -54,7 +54,7 @@ class FirstOrderMotion:
         paddle.disable_static()
         place = 'gpu:0' if use_gpu else 'cpu'
         place = paddle.set_device(place)
-        if source_image == None or driving_video == None:
+        if source_image is None or driving_video is None:
             print('No image or driving video provided. Please input an image and a driving video.')
             return
         self.network.run(source_image, driving_video, ratio, image_size, output_dir, filename)
@@ -65,10 +65,11 @@ class FirstOrderMotion:
         Run as a command.
         """
         self.parser = argparse.ArgumentParser(
-            description="Run the {} module.".format(self.name),
-            prog='hub run {}'.format(self.name),
+            description=f"Run the {self.name} module.",
+            prog=f'hub run {self.name}',
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
 
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_config_group = self.parser.add_argument_group(

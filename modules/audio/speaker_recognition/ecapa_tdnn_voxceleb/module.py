@@ -62,7 +62,7 @@ class SpeakerRecognition(paddle.nn.Layer):
 
     def load_audio(self, wav):
         wav = os.path.abspath(os.path.expanduser(wav))
-        assert os.path.isfile(wav), 'Please check wav file: {}'.format(wav)
+        assert os.path.isfile(wav), f'Please check wav file: {wav}'
         waveform, _ = paddleaudio.load(wav, sr=self.sr, mono=True, normal=False)
         return waveform
 
@@ -88,6 +88,8 @@ class SpeakerRecognition(paddle.nn.Layer):
         fbank = compute_log_fbank(x)  # x: waveform tensors with (B, T) shape
         norm_fbank = normalize(fbank)
         embedding = self.model(norm_fbank.transpose([0, 2, 1])).transpose([0, 2, 1])
-        norm_embedding = normalize(x=embedding, global_mean=self.global_emb_mean, global_std=self.global_emb_std)
-
-        return norm_embedding
+        return normalize(
+            x=embedding,
+            global_mean=self.global_emb_mean,
+            global_std=self.global_emb_std,
+        )

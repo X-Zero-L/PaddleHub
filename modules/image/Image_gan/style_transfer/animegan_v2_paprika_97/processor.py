@@ -55,7 +55,7 @@ class Processor():
         # 读取数据列表
         if self.paths is not None:
             for im_path in self.paths:
-                assert os.path.isfile(im_path), "The {} isn't a valid file path.".format(im_path)
+                assert os.path.isfile(im_path), f"The {im_path} isn't a valid file path."
                 im = cv2.imread(im_path)
                 datas.append(im)
 

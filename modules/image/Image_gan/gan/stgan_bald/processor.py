@@ -38,7 +38,7 @@ def postprocess(data_out, org_im, org_im_path, output_dir, visualization, thresh
     Returns:
         result (dict): The data of processed image.
     """
-    result = dict()
+    result = {}
     for i, img in enumerate(data_out):
 
         img = np.squeeze(img[0].as_ndarray(), 0).transpose((1, 2, 0))
@@ -49,10 +49,10 @@ def postprocess(data_out, org_im, org_im_path, output_dir, visualization, thresh
         if visualization:
             check_dir(output_dir)
             save_im_path = get_save_image_name(org_im_path, output_dir, i)
-            img_name = '{}.png'.format(i)
+            img_name = f'{i}.png'
             fake_image.save(os.path.join(output_dir, img_name))
 
-        result['data_{}'.format(i)] = img
+        result[f'data_{i}'] = img
 
     return result
 

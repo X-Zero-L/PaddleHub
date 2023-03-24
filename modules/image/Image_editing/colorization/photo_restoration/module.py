@@ -51,7 +51,7 @@ class PhotoRestoreModel(Module):
                   save_path: str = 'photo_restoration'):
         self.models = []
         for model in model_select:
-            print('\n {} model proccess start..'.format(model))
+            print(f'\n {model} model proccess start..')
             if model == 'Colorization':
                 self.deoldify.eval()
                 self.models.append(self.deoldify)
@@ -65,7 +65,7 @@ class PhotoRestoreModel(Module):
         if self.visualization:
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
-            img_name = str(time.time()) + '.png'
+            img_name = f'{str(time.time())}.png'
             save_img = os.path.join(save_path, img_name)
             cv2.imwrite(save_img, output)
             print("save result at: ", save_img)

@@ -30,11 +30,11 @@ from paddlehub.common.downloader import default_downloader
 from paddlehub.module.module import runnable
 from paddlehub.module.nlp_module import DataFormatError
 
-lack_dependency = []
-for dependency in ["ruamel", "parakeet", "soundfile", "librosa"]:
-    if not importlib.util.find_spec(dependency):
-        lack_dependency.append(dependency)
-
+lack_dependency = [
+    dependency
+    for dependency in ["ruamel", "parakeet", "soundfile", "librosa"]
+    if not importlib.util.find_spec(dependency)
+]
 # Accelerate NLTK package download via paddlehub. 'import parakeet' will use the package.
 _PUNKT_URL = "https://paddlehub.bj.bcebos.com/paddlehub-thirdparty/punkt.tar.gz"
 _CMUDICT_URL = "https://paddlehub.bj.bcebos.com/paddlehub-thirdparty/cmudict.tar.gz"
@@ -50,19 +50,18 @@ if not os.path.exists(cmudict_path):
     default_downloader.download_file_and_uncompress(url=_CMUDICT_URL, save_path=corpora_path, print_progress=True)
 nltk.data.path.append(nltk_path)
 
-if not lack_dependency:
-    import soundfile as sf
-    import librosa
-    import ruamel.yaml
-    from parakeet.utils import io
-    from parakeet.g2p import en
-    from parakeet.models.deepvoice3 import Encoder, Decoder, PostNet, SpectraNet
-    from parakeet.models.waveflow import WaveFlowModule
-    from parakeet.models.deepvoice3.weight_norm_hook import remove_weight_norm
-else:
+if lack_dependency:
     raise ImportError(
-        "The module requires additional dependencies: %s. You can install parakeet via 'git clone https://github.com/PaddlePaddle/Parakeet && cd Parakeet && pip install -e .' and others via pip install"
-        % ", ".join(lack_dependency))
+        f"""The module requires additional dependencies: {", ".join(lack_dependency)}. You can install parakeet via 'git clone https://github.com/PaddlePaddle/Parakeet && cd Parakeet && pip install -e .' and others via pip install"""
+    )
+import soundfile as sf
+import librosa
+import ruamel.yaml
+from parakeet.utils import io
+from parakeet.g2p import en
+from parakeet.models.deepvoice3 import Encoder, Decoder, PostNet, SpectraNet
+from parakeet.models.waveflow import WaveFlowModule
+from parakeet.models.deepvoice3.weight_norm_hook import remove_weight_norm
 
 
 class AttrDict(dict):
@@ -102,9 +101,11 @@ class GriffinLimVocoder(object):
     def __call__(self, mel):
         spec = librosa.feature.inverse.mel_to_stft(
             np.exp(mel), sr=self.sample_rate, n_fft=self.n_fft, fmin=0, fmax=8000.0, power=1.0)
-        audio = librosa.core.griffinlim(
-            spec**self.sharpening_factor, win_length=self.win_length, hop_length=self.hop_length)
-        return audio
+        return librosa.core.griffinlim(
+            spec**self.sharpening_factor,
+            win_length=self.win_length,
+            hop_length=self.hop_length,
+        )
 
 
 @moduleinfo(
@@ -213,7 +214,7 @@ class DeepVoice3(hub.NLPPredictionModule):
             monotonic_layers = [4]
             for text in predicted_data:
                 # init input
-                logger.info("Processing sentence: %s" % text)
+                logger.info(f"Processing sentence: {text}")
                 text = en.text_to_sequence(text, p=1.0)
                 text = np.expand_dims(np.array(text, dtype="int64"), 0)
                 lengths = np.array([text.size], dtype=np.int64)
@@ -240,7 +241,8 @@ class DeepVoice3(hub.NLPPredictionModule):
                     wav = self.waveflow(fluid.layers.transpose(refined, [0, 2, 1])).numpy()[0]
                 else:
                     raise ValueError(
-                        'vocoder error, we only support griffinlim and waveflow, but recevied %s.' % vocoder)
+                        f'vocoder error, we only support griffinlim and waveflow, but recevied {vocoder}.'
+                    )
                 wavs.append(wav)
         return wavs, self.tts_config["sample_rate"]
 
@@ -251,8 +253,7 @@ class DeepVoice3(hub.NLPPredictionModule):
         """
         wavs, sample_rate = self.synthesize(texts, use_gpu, vocoder)
         wavs = [wav.tolist() for wav in wavs]
-        result = {"wavs": wavs, "sample_rate": sample_rate}
-        return result
+        return {"wavs": wavs, "sample_rate": sample_rate}
 
     def add_module_config_arg(self):
         """
@@ -280,10 +281,11 @@ class DeepVoice3(hub.NLPPredictionModule):
         Run as a command
         """
         self.parser = argparse.ArgumentParser(
-            description='Run the %s module.' % self.name,
-            prog='hub run %s' % self.name,
+            description=f'Run the {self.name} module.',
+            prog=f'hub run {self.name}',
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
 
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_input_group = self.parser.add_argument_group(
@@ -309,8 +311,7 @@ class DeepVoice3(hub.NLPPredictionModule):
         for index, wav in enumerate(wavs):
             sf.write(os.path.join(args.output_path, f"{index}.wav"), wav, sample_rate)
 
-        ret = f"The synthesized wav files have been saved in {args.output_path}"
-        return ret
+        return f"The synthesized wav files have been saved in {args.output_path}"
 
 
 if __name__ == "__main__":

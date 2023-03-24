@@ -107,10 +107,8 @@ class ColorizePreprocess:
         """
         if type(data_lab) is not np.ndarray:
             data_lab = data_lab.numpy()
-        data = {}
         A = 2 * 110 / 10 + 1
-        data['A'] = data_lab[:, [0], :, :]
-        data['B'] = data_lab[:, 1:, :, :]
+        data = {'A': data_lab[:, [0], :, :], 'B': data_lab[:, 1:, :, :]}
         if self.ab_thresh > 0:  # mask out grayscale images
             thresh = 1. * self.ab_thresh / 110
             mask = np.sum(

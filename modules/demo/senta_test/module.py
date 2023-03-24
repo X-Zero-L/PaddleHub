@@ -29,11 +29,9 @@ class SentaTest:
     def sentiment_classify(self, texts):
         results = []
         for text in texts:
-            sentiment = "positive"
-            for word in self.vocab:
-                if word in text:
-                    sentiment = "negative"
-                    break
+            sentiment = next(
+                ("negative" for word in self.vocab if word in text), "positive"
+            )
             results.append({"text": text, "sentiment": sentiment})
 
         return results

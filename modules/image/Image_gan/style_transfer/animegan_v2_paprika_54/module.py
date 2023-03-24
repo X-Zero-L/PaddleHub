@@ -39,11 +39,7 @@ class Animegan_V2_Paprika_54(Module):
         # 模型预测
         outputs = self.model.predict(processor.input_datas)
 
-        # 结果后处理
-        results = processor.postprocess(outputs, visualization)
-
-        # 返回结果
-        return results
+        return processor.postprocess(outputs, visualization)
 
     # Hub Serving
     @serving

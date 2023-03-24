@@ -39,18 +39,20 @@ class U2Conformer(paddle.nn.Layer):
     def check_audio(audio_file):
         assert audio_file.endswith('.wav'), 'Input file must be a wave file `*.wav`.'
         sig, sample_rate = load(audio_file)
-        if sample_rate != 16000:
-            sig, _ = load(audio_file, 16000)
-            audio_file_16k = audio_file[:audio_file.rindex('.')] + '_16k.wav'
-            logger.info('Resampling to 16000 sample rate to new audio file: {}'.format(audio_file_16k))
-            save_wav(sig, 16000, audio_file_16k)
-            return audio_file_16k
-        else:
+        if sample_rate == 16000:
             return audio_file
+        sig, _ = load(audio_file, 16000)
+        audio_file_16k = audio_file[:audio_file.rindex('.')] + '_16k.wav'
+        logger.info(
+            f'Resampling to 16000 sample rate to new audio file: {audio_file_16k}'
+        )
+        save_wav(sig, 16000, audio_file_16k)
+        return audio_file_16k
 
     @serving
     def speech_recognize(self, audio_file, device='cpu'):
-        assert os.path.isfile(audio_file), 'File not exists: {}'.format(audio_file)
+        assert os.path.isfile(audio_file), f'File not exists: {audio_file}'
         audio_file = self.check_audio(audio_file)
-        text = self.asr_executor(audio_file=audio_file, device=device, **self.asr_kw_args)
-        return text
+        return self.asr_executor(
+            audio_file=audio_file, device=device, **self.asr_kw_args
+        )

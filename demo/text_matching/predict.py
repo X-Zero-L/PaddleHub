@@ -31,4 +31,4 @@ if __name__ == '__main__':
         label_map=label_map)
     results = model.predict(data, max_seq_len=50, batch_size=1, use_gpu=True)
     for idx, texts in enumerate(data):
-        print('TextA: {}\tTextB: {}\t Label: {}'.format(texts[0], texts[1], results[idx]))
+        print(f'TextA: {texts[0]}\tTextB: {texts[1]}\t Label: {results[idx]}')

@@ -116,15 +116,12 @@ class StganBald(hub.Module):
 
         if data and 'image' in data:
             if paths is None:
-                paths = list()
+                paths = []
             paths += data['image']
 
-        all_data = list()
-        for yield_data in reader(images, paths, org_labels, target_labels):
-            all_data.append(yield_data)
-
+        all_data = list(reader(images, paths, org_labels, target_labels))
         total_num = len(all_data)
-        res = list()
+        res = []
         outputs = []
         for i in range(total_num):
             image_np = all_data[i]['img']
@@ -165,8 +162,4 @@ class StganBald(hub.Module):
         """
         images_decode = [base64_to_cv2(image) for image in images]
         results = self.bald(images=images_decode, **kwargs)
-        output = {}
-        for key, value in results[0].items():
-            output[key] = cv2_to_base64(value)
-
-        return output
+        return {key: cv2_to_base64(value) for key, value in results[0].items()}

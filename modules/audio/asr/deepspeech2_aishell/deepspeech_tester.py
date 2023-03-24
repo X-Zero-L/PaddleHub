@@ -61,8 +61,9 @@ class DeepSpeech2Tester:
         audio_len = paddle.to_tensor(audio_len)
         audio = paddle.unsqueeze(audio, axis=0)
         vocab_list = collate_fn_test.vocab_list
-        result_transcripts = self.compute_result_transcripts(audio, audio_len, vocab_list, cfg.decoding)
-        return result_transcripts
+        return self.compute_result_transcripts(
+            audio, audio_len, vocab_list, cfg.decoding
+        )
 
     def setup_model(self):
         config = self.config.clone()

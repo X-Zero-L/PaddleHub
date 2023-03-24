@@ -30,8 +30,9 @@ class Registry(object):
         self._obj_map = {}
 
     def _do_register(self, name, obj):
-        assert (name not in self._obj_map), "An object named '{}' was already registered in '{}' registry!".format(
-            name, self._name)
+        assert (
+            name not in self._obj_map
+        ), f"An object named '{name}' was already registered in '{self._name}' registry!"
         self._obj_map[name] = obj
 
     def register(self, obj=None, name=None):
@@ -57,7 +58,7 @@ class Registry(object):
     def get(self, name):
         ret = self._obj_map.get(name)
         if ret is None:
-            raise KeyError("No object named '{}' found in '{}' registry!".format(name, self._name))
+            raise KeyError(f"No object named '{name}' found in '{self._name}' registry!")
 
         return ret
 
@@ -99,9 +100,7 @@ class RRDB(nn.Layer):
 
 
 def make_layer(block, n_layers):
-    layers = []
-    for _ in range(n_layers):
-        layers.append(block())
+    layers = [block() for _ in range(n_layers)]
     return nn.Sequential(*layers)
 
 
@@ -132,6 +131,4 @@ class RRDBNet(nn.Layer):
 
         fea = self.lrelu(self.upconv1(F.interpolate(fea, scale_factor=2, mode='nearest')))
         fea = self.lrelu(self.upconv2(F.interpolate(fea, scale_factor=2, mode='nearest')))
-        out = self.conv_last(self.lrelu(self.HRconv(fea)))
-
-        return out
+        return self.conv_last(self.lrelu(self.HRconv(fea)))

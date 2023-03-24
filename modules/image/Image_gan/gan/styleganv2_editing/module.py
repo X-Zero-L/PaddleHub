@@ -65,7 +65,7 @@ class styleganv2_editing:
         paddle.disable_static()
         place = 'gpu:0' if use_gpu else 'cpu'
         place = paddle.set_device(place)
-        if images == None and paths == None:
+        if images is None and paths is None:
             print('No image provided. Please input an image or a image path.')
             return
 
@@ -88,9 +88,9 @@ class styleganv2_editing:
                 os.makedirs(output_dir, exist_ok=True)
             for i, out in enumerate(results):
                 if out is not None:
-                    cv2.imwrite(os.path.join(output_dir, 'src_{}.png'.format(i)), out[0][:, :, ::-1])
-                    cv2.imwrite(os.path.join(output_dir, 'dst_{}.png'.format(i)), out[1][:, :, ::-1])
-                    np.save(os.path.join(output_dir, 'dst_{}.npy'.format(i)), out[2])
+                    cv2.imwrite(os.path.join(output_dir, f'src_{i}.png'), out[0][:, :, ::-1])
+                    cv2.imwrite(os.path.join(output_dir, f'dst_{i}.png'), out[1][:, :, ::-1])
+                    np.save(os.path.join(output_dir, f'dst_{i}.npy'), out[2])
 
         return results
 
@@ -100,10 +100,11 @@ class styleganv2_editing:
         Run as a command.
         """
         self.parser = argparse.ArgumentParser(
-            description="Run the {} module.".format(self.name),
-            prog='hub run {}'.format(self.name),
+            description=f"Run the {self.name} module.",
+            prog=f'hub run {self.name}',
             usage='%(prog)s',
-            add_help=True)
+            add_help=True,
+        )
 
         self.arg_input_group = self.parser.add_argument_group(title="Input options", description="Input data. Required")
         self.arg_config_group = self.parser.add_argument_group(
@@ -111,14 +112,14 @@ class styleganv2_editing:
         self.add_module_config_arg()
         self.add_module_input_arg()
         self.args = self.parser.parse_args(argvs)
-        results = self.generate(
+        return self.generate(
             paths=[self.args.input_path],
             direction_name=self.args.direction_name,
             direction_offset=self.args.direction_offset,
             output_dir=self.args.output_dir,
             use_gpu=self.args.use_gpu,
-            visualization=self.args.visualization)
-        return results
+            visualization=self.args.visualization,
+        )
 
     @serving
     def serving_method(self, images, **kwargs):
@@ -127,8 +128,7 @@ class styleganv2_editing:
         """
         images_decode = [base64_to_cv2(image) for image in images]
         results = self.generate(images=images_decode, **kwargs)
-        tolist = [result.tolist() for result in results]
-        return tolist
+        return [result.tolist() for result in results]
 
     def add_module_config_arg(self):
         """

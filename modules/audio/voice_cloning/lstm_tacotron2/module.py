@@ -129,8 +129,7 @@ class VoiceCloner(nn.Layer):
     def forward(self, phones: paddle.Tensor, tones: paddle.Tensor, speaker_embeddings: paddle.Tensor):
         outputs = self.synthesizer.infer(phones, tones=tones, global_condition=speaker_embeddings)
         mel_input = paddle.transpose(outputs["mel_outputs_postnet"], [0, 2, 1])
-        waveforms = self.vocoder.infer(mel_input)
-        return waveforms
+        return self.vocoder.infer(mel_input)
 
     def _convert_text_to_input(self, text: str):
         """
@@ -168,7 +167,9 @@ class VoiceCloner(nn.Layer):
             yield _parse_batch(one_batch)
 
     def generate(self, data: List[str], batch_size: int = 1, use_gpu: bool = False):
-        assert self._speaker_embedding is not None, f'Set speaker embedding before voice cloning.'
+        assert (
+            self._speaker_embedding is not None
+        ), 'Set speaker embedding before voice cloning.'
 
         paddle.set_device('gpu') if use_gpu else paddle.set_device('cpu')
         batches = self._batchify(data, batch_size)

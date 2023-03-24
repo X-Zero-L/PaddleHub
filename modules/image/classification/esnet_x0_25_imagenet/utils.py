@@ -86,7 +86,7 @@ def override(dl, ks, v):
     else:
         if len(ks) == 1:
             # assert ks[0] in dl, ('{} is not exist in {}'.format(ks[0], dl))
-            if not ks[0] in dl:
+            if ks[0] not in dl:
                 print('A new filed ({}) detected!'.format(ks[0], dl))
             dl[ks[0]] = str2num(v)
         else:
@@ -108,9 +108,10 @@ def override_config(config, options=None):
     """
     if options is not None:
         for opt in options:
-            assert isinstance(opt, str), ("option({}) should be a str".format(opt))
-            assert "=" in opt, ("option({}) should contain a ="
-                                "to distinguish between key and value".format(opt))
+            assert isinstance(opt, str), f"option({opt}) should be a str"
+            assert (
+                "=" in opt
+            ), f"option({opt}) should contain a =to distinguish between key and value"
             pair = opt.split('=')
             assert len(pair) == 2, ("there can be only a = in the option")
             key, value = pair
@@ -123,7 +124,7 @@ def get_config(fname, overrides=None, show=False):
     """
     Read config from file
     """
-    assert os.path.exists(fname), ('config file({}) is not exist'.format(fname))
+    assert os.path.exists(fname), f'config file({fname}) is not exist'
     config = parse_config(fname)
     override_config(config, overrides)
     return config

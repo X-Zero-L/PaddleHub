@@ -26,7 +26,7 @@ def reader(images=None, paths=None):
     Yield:
         im (numpy.ndarray): preprocessed data, with shape (1, 3, 512, 512).
     """
-    pipeline_list = list()
+    pipeline_list = []
     # images
     for key, data in [('im_arr', images), ('im_path', paths)]:
         if data is not None:
@@ -38,7 +38,7 @@ def reader(images=None, paths=None):
                 styles_list = component['styles']
                 styles_num = len(styles_list)
                 each_res['styles_arr_list'] = []
-                for i, style_arr in enumerate(styles_list):
+                for style_arr in styles_list:
                     each_res['styles_arr_list'].append(_handle_single(**{key: style_arr})[0])
                 # style_interpolation_weights
                 if 'weights' in component:
@@ -54,8 +54,7 @@ def reader(images=None, paths=None):
                 pipeline_list.append([each_res, w, h])
 
     # yield
-    for element in pipeline_list:
-        yield element
+    yield from pipeline_list
 
 
 def _handle_single(im_path=None, im_arr=None):
@@ -71,10 +70,10 @@ def _handle_single(im_path=None, im_arr=None):
     if im_path is not None:
         im = cv2.imread(im_path)
         if im is None:
-            raise FileNotFoundError('Error: The file path "{}"  may not exist or is not a valid image file, please provide a valid path.'.format(im_path))
+            raise FileNotFoundError(
+                f'Error: The file path "{im_path}"  may not exist or is not a valid image file, please provide a valid path.'
+            )
         else:
-            assert(len(im.shape) == 3, 'The input image shape should be [H, W, 3], but got {}'.format(im.shape))
-            assert(im.shape[2] == 3,  'The input image should have 3 channels, but got {}'.format(im.shape[2]))
             im = im[:, :, ::-1].astype(np.float32)    ### Image should have 3-channels, and BGR format is arranged by cv2, we should change it to RGB.
     if im_arr is not None:
         im = im_arr[:, :, ::-1].astype(np.float32)

@@ -31,7 +31,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 if __name__ == '__main__':
-    label_map = {idx: label for idx, label in enumerate(ESC50.label_list)}
+    label_map = dict(enumerate(ESC50.label_list))
 
     model = hub.Module(
         name=args.model_type,

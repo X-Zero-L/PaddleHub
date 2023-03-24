@@ -104,7 +104,7 @@ class HubFitterClassifer(object):
         if os.path.isfile(label_list):
             class_to_id_dict = _read_classes(label_list)
         else:
-            assert 0, "label_list:{} not exist".format(label_list)
+            assert 0, f"label_list:{label_list} not exist"
         self.num_classes = len(class_to_id_dict)
         self.class_to_id_dict = class_to_id_dict
 
@@ -129,7 +129,7 @@ class HubFitterClassifer(object):
             number, instead of overwriting the existing checkpoints.
         """
         checkpoint_path = os.path.join(checkpoint_dir, 'epoch') + '-' + str(step)
-        logger.info('Saving model checkpoint to {}'.format(checkpoint_path))
+        logger.info(f'Saving model checkpoint to {checkpoint_path}')
         self.trainer.save_model(os.path.join(checkpoint_path, "checkpoint"))
 
         return checkpoint_path
@@ -138,7 +138,7 @@ class HubFitterClassifer(object):
         """Loads a checkpoint with the architecture structure stored in the name."""
         ckpt_path = os.path.join(checkpoint_path, "checkpoint")
         self.trainer.load_model(ckpt_path)
-        logger.info('Loaded child model checkpoint from {}'.format(checkpoint_path))
+        logger.info(f'Loaded child model checkpoint from {checkpoint_path}')
 
     def eval_child_model(self, mode: str, pass_id: int = 0) -> dict:
         """Evaluate the child model.
@@ -196,7 +196,9 @@ class HubFitterClassifer(object):
         """Trains the model `m` for one epoch."""
         start_time = time.time()
         train_acc = self.train_one_epoch(curr_epoch)
-        logger.info('Epoch:{} time(min): {}'.format(curr_epoch, (time.time() - start_time) / 60.0))
+        logger.info(
+            f'Epoch:{curr_epoch} time(min): {(time.time() - start_time) / 60.0}'
+        )
         return train_acc
 
     def _compute_final_accuracies(self, iteration: int) -> dict:
@@ -206,10 +208,9 @@ class HubFitterClassifer(object):
 
         if (iteration >= task_config[task_type].epochs - 1):
             test_acc = self.eval_child_model('test', iteration)
-            pass
         else:
             test_acc = {"test_acc": 0}
-        logger.info('Test acc: {}'.format(test_acc))
+        logger.info(f'Test acc: {test_acc}')
         return test_acc
 
     def run_model(self, epoch: int) -> dict:
@@ -217,8 +218,8 @@ class HubFitterClassifer(object):
         self._fit_param()
         train_acc = self._run_training_loop(epoch)
         valid_acc = self.eval_child_model(mode="val", pass_id=epoch)
-        logger.info('valid acc: {}'.format(valid_acc))
+        logger.info(f'valid acc: {valid_acc}')
         all_metric = {}
-        all_metric.update(train_acc)
+        all_metric |= train_acc
         all_metric.update(valid_acc)
         return all_metric

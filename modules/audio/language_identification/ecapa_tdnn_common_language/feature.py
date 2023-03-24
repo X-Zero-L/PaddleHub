@@ -43,9 +43,9 @@ def compute_fbank_matrix(sample_rate: int = 16000,
     left_side = slope + 1.0
     right_side = -slope + 1.0
 
-    fbank_matrix = paddle.maximum(paddle.zeros_like(left_side), paddle.minimum(left_side, right_side))
-
-    return fbank_matrix
+    return paddle.maximum(
+        paddle.zeros_like(left_side), paddle.minimum(left_side, right_side)
+    )
 
 
 def compute_log_fbank(
@@ -77,21 +77,12 @@ def compute_log_fbank(
         f_max=f_max,
     )
     fbank = paddle.matmul(fbank_matrix, spect)
-    log_fbank = power_to_db(fbank, top_db=top_db).transpose([0, 2, 1])
-    return log_fbank
+    return power_to_db(fbank, top_db=top_db).transpose([0, 2, 1])
 
 
 def compute_stats(x: paddle.Tensor, mean_norm: bool = True, std_norm: bool = False, eps: float = 1e-10):
-    if mean_norm:
-        current_mean = paddle.mean(x, axis=0)
-    else:
-        current_mean = paddle.to_tensor([0.0])
-
-    if std_norm:
-        current_std = paddle.std(x, axis=0)
-    else:
-        current_std = paddle.to_tensor([1.0])
-
+    current_mean = paddle.mean(x, axis=0) if mean_norm else paddle.to_tensor([0.0])
+    current_std = paddle.std(x, axis=0) if std_norm else paddle.to_tensor([1.0])
     current_std = paddle.maximum(current_std, eps * paddle.ones_like(current_std))
 
     return current_mean, current_std

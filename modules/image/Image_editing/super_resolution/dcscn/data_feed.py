@@ -21,11 +21,11 @@ def reader(images=None, paths=None):
     Yield:
         each (collections.OrderedDict): info of original image, preprocessed image.
     """
-    component = list()
+    component = []
     if paths:
         for im_path in paths:
             each = OrderedDict()
-            assert os.path.isfile(im_path), "The {} isn't a valid file path.".format(im_path)
+            assert os.path.isfile(im_path), f"The {im_path} isn't a valid file path."
             im = cv2.imread(im_path).astype('float32')
             each['org_im'] = im
             each['org_im_path'] = im_path
@@ -37,7 +37,7 @@ def reader(images=None, paths=None):
             im = im.astype(np.float32)
             each = OrderedDict()
             each['org_im'] = im
-            each['org_im_path'] = 'ndarray_time={}'.format(round(time.time(), 6) * 1e6)
+            each['org_im_path'] = f'ndarray_time={round(time.time(), 6) * 1000000.0}'
             each['org_im_shape'] = im.shape
             component.append(each)
 

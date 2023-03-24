@@ -192,7 +192,7 @@ def render_serial(original_img, net_g, meta_brushes):
         #* ----- read in image and init canvas ----- *#
         final_result = paddle.zeros_like(original_img)
 
-        for layer in range(0, K + 1):
+        for layer in range(K + 1):
             t0 = time.time()
             layer_size = patch_size * (2**layer)
 
@@ -243,9 +243,8 @@ def render_serial(original_img, net_g, meta_brushes):
             total_error_list = wA_error_list + wB_error_list
             sort_list = list(np.argsort(total_error_list))
 
-            sample = 0
             samples = np.linspace(0, len(sort_list) - 2, frames_per_layer[layer]).astype(int)
-            for ii in sort_list:
+            for sample, ii in enumerate(sort_list):
                 ii = int(ii)
                 if ii < numA:
                     x_id = wA_xid_list[ii]
@@ -272,7 +271,6 @@ def render_serial(original_img, net_g, meta_brushes):
                     final_frame_list.append(saveframe)
                     #saveframe = cv2.resize(saveframe, (ow, oh))
 
-                sample += 1
             print("layer %d cost: %.02f" % (layer, time.time() - t0))
 
         saveframe = (final_result.numpy().squeeze().transpose([1, 2, 0])[:, :, ::-1] * 255).astype(np.uint8)

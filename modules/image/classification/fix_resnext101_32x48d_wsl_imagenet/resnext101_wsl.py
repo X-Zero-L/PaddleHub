@@ -46,7 +46,7 @@ class ResNeXt101_wsl():
 
         for block in range(len(depth)):
             for i in range(depth[block]):
-                conv_name = 'layer' + str(block + 1) + "." + str(i)
+                conv_name = f'layer{str(block + 1)}.{str(i)}'
                 conv = self.bottleneck_block(
                     input=conv,
                     num_filters=num_filters[block],
@@ -64,10 +64,7 @@ class ResNeXt101_wsl():
         return out, pool
 
     def conv_bn_layer(self, input, num_filters, filter_size, stride=1, groups=1, act=None, name=None):
-        if "downsample" in name:
-            conv_name = name + '.0'
-        else:
-            conv_name = name
+        conv_name = f'{name}.0' if "downsample" in name else name
         conv = fluid.layers.conv2d(
             input=input,
             num_filters=num_filters,
@@ -76,22 +73,22 @@ class ResNeXt101_wsl():
             padding=(filter_size - 1) // 2,
             groups=groups,
             act=None,
-            param_attr=ParamAttr(name=conv_name + ".weight"),
-            bias_attr=False)
+            param_attr=ParamAttr(name=f"{conv_name}.weight"),
+            bias_attr=False,
+        )
         if "downsample" in name:
-            bn_name = name[:9] + 'downsample' + '.1'
+            bn_name = f'{name[:9]}downsample.1'
+        elif name == "conv1":
+            bn_name = f'bn{name[-1]}'
         else:
-            if "conv1" == name:
-                bn_name = 'bn' + name[-1]
-            else:
-                bn_name = (name[:10] if name[7:9].isdigit() else name[:9]) + 'bn' + name[-1]
+            bn_name = (name[:10] if name[7:9].isdigit() else name[:9]) + 'bn' + name[-1]
         return fluid.layers.batch_norm(
             input=conv,
             act=act,
-            param_attr=ParamAttr(name=bn_name + '.weight'),
-            bias_attr=ParamAttr(bn_name + '.bias'),
-            moving_mean_name=bn_name + '.running_mean',
-            moving_variance_name=bn_name + '.running_var',
+            param_attr=ParamAttr(name=f'{bn_name}.weight'),
+            bias_attr=ParamAttr(f'{bn_name}.bias'),
+            moving_mean_name=f'{bn_name}.running_mean',
+            moving_variance_name=f'{bn_name}.running_var',
         )
 
     def shortcut(self, input, ch_out, stride, name):
@@ -105,7 +102,12 @@ class ResNeXt101_wsl():
         cardinality = self.cardinality
         width = self.width
         conv0 = self.conv_bn_layer(
-            input=input, num_filters=num_filters, filter_size=1, act='relu', name=name + ".conv1")
+            input=input,
+            num_filters=num_filters,
+            filter_size=1,
+            act='relu',
+            name=f"{name}.conv1",
+        )
         conv1 = self.conv_bn_layer(
             input=conv0,
             num_filters=num_filters,
@@ -113,35 +115,38 @@ class ResNeXt101_wsl():
             stride=stride,
             groups=cardinality,
             act='relu',
-            name=name + ".conv2")
+            name=f"{name}.conv2",
+        )
         conv2 = self.conv_bn_layer(
-            input=conv1, num_filters=num_filters // (width // 8), filter_size=1, act=None, name=name + ".conv3")
+            input=conv1,
+            num_filters=num_filters // (width // 8),
+            filter_size=1,
+            act=None,
+            name=f"{name}.conv3",
+        )
 
-        short = self.shortcut(input, num_filters // (width // 8), stride, name=name + ".downsample")
+        short = self.shortcut(
+            input, num_filters // (width // 8), stride, name=f"{name}.downsample"
+        )
 
         return fluid.layers.elementwise_add(x=short, y=conv2, act='relu')
 
 
 def ResNeXt101_32x8d_wsl():
-    model = ResNeXt101_wsl(cardinality=32, width=8)
-    return model
+    return ResNeXt101_wsl(cardinality=32, width=8)
 
 
 def ResNeXt101_32x16d_wsl():
-    model = ResNeXt101_wsl(cardinality=32, width=16)
-    return model
+    return ResNeXt101_wsl(cardinality=32, width=16)
 
 
 def ResNeXt101_32x32d_wsl():
-    model = ResNeXt101_wsl(cardinality=32, width=32)
-    return model
+    return ResNeXt101_wsl(cardinality=32, width=32)
 
 
 def ResNeXt101_32x48d_wsl():
-    model = ResNeXt101_wsl(cardinality=32, width=48)
-    return model
+    return ResNeXt101_wsl(cardinality=32, width=48)
 
 
 def Fix_ResNeXt101_32x48d_wsl():
-    model = ResNeXt101_wsl(cardinality=32, width=48)
-    return model
+    return ResNeXt101_wsl(cardinality=32, width=48)

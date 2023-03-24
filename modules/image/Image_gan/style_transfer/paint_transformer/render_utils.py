@@ -21,8 +21,7 @@ class Erosion2d(nn.Layer):
         batch_size, c, h, w = x.shape
         x_pad = F.pad(x, pad=self.pad, mode='constant', value=1e9)
         channel = nn.functional.unfold(x_pad, 2 * self.m + 1, strides=1, paddings=0).reshape([batch_size, c, -1, h, w])
-        result = paddle.min(channel, axis=2)
-        return result
+        return paddle.min(channel, axis=2)
 
 
 class Dilation2d(nn.Layer):
@@ -39,8 +38,7 @@ class Dilation2d(nn.Layer):
         batch_size, c, h, w = x.shape
         x_pad = F.pad(x, pad=self.pad, mode='constant', value=-1e9)
         channel = nn.functional.unfold(x_pad, 2 * self.m + 1, strides=1, paddings=0).reshape([batch_size, c, -1, h, w])
-        result = paddle.max(channel, axis=2)
-        return result
+        return paddle.max(channel, axis=2)
 
 
 def param2stroke(param, H, W, meta_brushes):
@@ -107,5 +105,6 @@ def pad(img, H, W):
     pad_w = (W - w) // 2
     remainder_h = (H - h) % 2
     remainder_w = (W - w) % 2
-    expand_img = nn.functional.pad(img, [pad_w, pad_w + remainder_w, pad_h, pad_h + remainder_h])
-    return expand_img
+    return nn.functional.pad(
+        img, [pad_w, pad_w + remainder_w, pad_h, pad_h + remainder_h]
+    )

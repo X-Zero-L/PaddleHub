@@ -19,8 +19,7 @@ class GramMatrix(nn.Layer):
         (b, ch, h, w) = y.shape
         features = y.reshape((b, ch, w * h))
         features_t = features.transpose((0, 2, 1))
-        gram = features.bmm(features_t) / (ch * h * w)
-        return gram
+        return features.bmm(features_t) / (ch * h * w)
 
 
 class ConvLayer(nn.Layer):
@@ -69,8 +68,7 @@ class UpsampleConvLayer(nn.Layer):
             x = self.upsample_layer(x)
         if self.pad != 0:
             x = self.reflection_pad(x)
-        out = self.conv2d(x)
-        return out
+        return self.conv2d(x)
 
 
 class Bottleneck(nn.Layer):
@@ -107,10 +105,7 @@ class Bottleneck(nn.Layer):
         self.conv_block = nn.Sequential(*conv_block)
 
     def forward(self, x: paddle.Tensor):
-        if self.downsample is not None:
-            residual = self.residual_layer(x)
-        else:
-            residual = x
+        residual = self.residual_layer(x) if self.downsample is not None else x
         m = self.conv_block(x)
         return residual + self.conv_block(x)
 
@@ -181,14 +176,13 @@ class Inspiration(nn.Layer):
         # input X is a 3D feature map
         self.P = paddle.bmm(self.weight.expand_as(self.G), self.G)
 
-        x = paddle.bmm(
-            self.P.transpose((0, 2, 1)).expand((X.shape[0], self.C, self.C)), X.reshape((X.shape[0], X.shape[1],
-                                                                                         -1))).reshape(X.shape)
-        return x
+        return paddle.bmm(
+            self.P.transpose((0, 2, 1)).expand((X.shape[0], self.C, self.C)),
+            X.reshape((X.shape[0], X.shape[1], -1)),
+        ).reshape(X.shape)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(' \
-               + 'N x ' + str(self.C) + ')'
+        return f'{self.__class__.__name__}(N x {str(self.C)})'
 
 
 class Vgg16(nn.Layer):
@@ -292,7 +286,7 @@ class MSGNet(nn.Layer):
 
         self.ins = Inspiration(ngf * expansion)
         model.append(self.ins)
-        for i in range(n_blocks):
+        for _ in range(n_blocks):
             model += [block(ngf * expansion, ngf, 1, None, norm_layer)]
 
         model += [

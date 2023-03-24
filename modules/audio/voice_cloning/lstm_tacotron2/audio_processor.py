@@ -210,5 +210,4 @@ class SpeakerVerificationPreprocessor(object):
 
         # Split the utterance into partials
         frames = self.melspectrogram(wav)
-        frames_batch = np.array([frames[s] for s in mel_slices])
-        return frames_batch  # [B, T, C]
+        return np.array([frames[s] for s in mel_slices])

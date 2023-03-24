@@ -33,7 +33,7 @@ class ResnetGenerator(nn.Layer):
         # Encoder Bottleneck
         mult = 2**n_downsampling
         for i in range(n_blocks):
-            setattr(self, 'EncodeBlock' + str(i + 1), ResnetBlock(ngf * mult))
+            setattr(self, f'EncodeBlock{str(i + 1)}', ResnetBlock(ngf * mult))
 
         # Class Activation Map
         self.gap_fc = nn.Linear(ngf * mult, 1, bias_attr=False)
@@ -62,7 +62,7 @@ class ResnetGenerator(nn.Layer):
         # Decoder Bottleneck
         mult = 2**n_downsampling
         for i in range(n_blocks):
-            setattr(self, 'DecodeBlock' + str(i + 1), ResnetSoftAdaLINBlock(ngf * mult))
+            setattr(self, f'DecodeBlock{str(i + 1)}', ResnetSoftAdaLINBlock(ngf * mult))
 
         # Up-Sampling
         UpBlock = []
@@ -95,7 +95,7 @@ class ResnetGenerator(nn.Layer):
 
         content_features = []
         for i in range(self.n_blocks):
-            x = getattr(self, 'EncodeBlock' + str(i + 1))(x)
+            x = getattr(self, f'EncodeBlock{str(i + 1)}')(x)
             content_features.append(F.adaptive_avg_pool2d(x, 1).reshape([bs, -1]))
 
         gap = F.adaptive_avg_pool2d(x, 1)
@@ -121,7 +121,9 @@ class ResnetGenerator(nn.Layer):
             style_features = self.FC(x.reshape([bs, -1]))
 
         for i in range(self.n_blocks):
-            x = getattr(self, 'DecodeBlock' + str(i + 1))(x, content_features[4 - i - 1], style_features)
+            x = getattr(self, f'DecodeBlock{str(i + 1)}')(
+                x, content_features[4 - i - 1], style_features
+            )
 
         out = self.UpBlock(x)
 
@@ -171,22 +173,22 @@ class HourGlassBlock(nn.Layer):
         self.n_block = 9
 
         for i in range(self.n_skip):
-            setattr(self, 'ConvBlockskip' + str(i + 1), ConvBlock(dim_in, dim_in))
+            setattr(self, f'ConvBlockskip{str(i + 1)}', ConvBlock(dim_in, dim_in))
 
         for i in range(self.n_block):
-            setattr(self, 'ConvBlock' + str(i + 1), ConvBlock(dim_in, dim_in))
+            setattr(self, f'ConvBlock{str(i + 1)}', ConvBlock(dim_in, dim_in))
 
     def forward(self, x):
         skips = []
         for i in range(self.n_skip):
-            skips.append(getattr(self, 'ConvBlockskip' + str(i + 1))(x))
+            skips.append(getattr(self, f'ConvBlockskip{str(i + 1)}')(x))
             x = F.avg_pool2d(x, 2)
-            x = getattr(self, 'ConvBlock' + str(i + 1))(x)
+            x = getattr(self, f'ConvBlock{str(i + 1)}')(x)
 
         x = self.ConvBlock5(x)
 
         for i in range(self.n_skip):
-            x = getattr(self, 'ConvBlock' + str(i + 6))(x)
+            x = getattr(self, f'ConvBlock{str(i + 6)}')(x)
             x = F.upsample(x, scale_factor=2)
             x = skips[self.n_skip - i - 1] + x
 
@@ -242,8 +244,7 @@ class ResnetBlock(nn.Layer):
         self.conv_block = nn.Sequential(*conv_block)
 
     def forward(self, x):
-        out = x + self.conv_block(x)
-        return out
+        return x + self.conv_block(x)
 
 
 class ResnetSoftAdaLINBlock(nn.Layer):
@@ -298,8 +299,7 @@ class SoftAdaLIN(nn.Layer):
         soft_gamma = (1. - w_gamma_) * style_gamma + w_gamma_ * content_gamma
         soft_beta = (1. - w_beta_) * style_beta + w_beta_ * content_beta
 
-        out = self.norm(x, soft_gamma, soft_beta)
-        return out
+        return self.norm(x, soft_gamma, soft_beta)
 
 
 class AdaLIN(nn.Layer):

@@ -67,7 +67,7 @@ class BoWModel(nn.Layer):
         if load_checkpoint is not None and os.path.isfile(load_checkpoint):
             state_dict = paddle.load(load_checkpoint)
             self.set_state_dict(state_dict)
-            logger.info('Loaded parameters from %s' % os.path.abspath(load_checkpoint))
+            logger.info(f'Loaded parameters from {os.path.abspath(load_checkpoint)}')
 
     def training_step(self, batch: List[paddle.Tensor], batch_idx: int):
         """

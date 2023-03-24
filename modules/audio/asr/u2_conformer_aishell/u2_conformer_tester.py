@@ -45,7 +45,7 @@ class U2ConformerTester:
         vocab_list = collate_fn_test.vocab_list
 
         text_feature = self.collate_fn_test.text_feature
-        result_transcripts = self.model.decode(
+        return self.model.decode(
             audio,
             audio_len,
             text_feature=text_feature,
@@ -60,9 +60,8 @@ class U2ConformerTester:
             ctc_weight=cfg.ctc_weight,
             decoding_chunk_size=cfg.decoding_chunk_size,
             num_decoding_left_chunks=cfg.num_decoding_left_chunks,
-            simulate_streaming=cfg.simulate_streaming)
-
-        return result_transcripts
+            simulate_streaming=cfg.simulate_streaming,
+        )
 
     def setup_model(self):
         config = self.config.clone()

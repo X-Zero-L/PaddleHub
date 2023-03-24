@@ -78,11 +78,7 @@ class BasicBlock(fluid.dygraph.Layer):
         y = self.conv0(inputs)
         conv1 = self.conv1(y)
 
-        if self.shortcut:
-            short = inputs
-        else:
-            short = self.short(inputs)
-
+        short = inputs if self.shortcut else self.short(inputs)
         y = short + conv1
 
         return fluid.layers.relu(y)
@@ -116,11 +112,7 @@ class BottleneckBlock(fluid.dygraph.Layer):
         conv1 = self.conv1(x)
         conv2 = self.conv2(conv1)
 
-        if self.shortcut:
-            short = inputs
-        else:
-            short = self.short(inputs)
-
+        short = inputs if self.shortcut else self.short(inputs)
         x = fluid.layers.elementwise_add(x=short, y=conv2)
 
         return fluid.layers.relu(x)
@@ -163,9 +155,9 @@ class ResNet(fluid.dygraph.Layer):
             101: [3, 4, 23, 3],
             152: [3, 8, 36, 3],
         }
-        assert depth in layer_config.keys(), \
-            "supported depth are {} but input layer is {}".format(
-                layer_config.keys(), depth)
+        assert (
+            depth in layer_config
+        ), f"supported depth are {layer_config.keys()} but input layer is {depth}"
 
         layers = layer_config[depth]
 
@@ -189,7 +181,7 @@ class ResNet(fluid.dygraph.Layer):
                     shortcut=shortcut)
                 blocks.append(block)
                 shortcut = True
-            layer = self.add_sublayer("layer_{}".format(idx), Sequential(*blocks))
+            layer = self.add_sublayer(f"layer_{idx}", Sequential(*blocks))
             self.layers.append(layer)
 
         if with_pool:
@@ -222,8 +214,9 @@ class ResNet(fluid.dygraph.Layer):
 def _resnet(arch, Block, depth, pretrained, **kwargs):
     model = ResNet(Block, depth, **kwargs)
     if pretrained:
-        assert arch in model_urls, "{} model do not have a pretrained model now, you should set pretrained=False".format(
-            arch)
+        assert (
+            arch in model_urls
+        ), f"{arch} model do not have a pretrained model now, you should set pretrained=False"
         weight_path = get_weights_path_from_url(model_urls[arch][0], model_urls[arch][1])
         assert weight_path.endswith('.pdparams'), "suffix of weight must be .pdparams"
         param, _ = fluid.load_dygraph(weight_path)
